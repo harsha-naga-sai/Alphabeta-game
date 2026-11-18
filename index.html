@@ -23,7 +23,7 @@
   .hint .piece{opacity:.55}
   .hintring{position:absolute;inset:14%;border-radius:50%;border:3px dashed #7ee787}
   .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-  button,select{background:#2a3647;color:var(--txt);border:0;border-radius:8px;padding:10px 12px;font-size:14px;font-weight:600}
+  button,select{background:#2a3647;color:var(--txt);border:0;border-radius:8px;padding:10px 12px;font-size:14px;font-weight:600;cursor:pointer}
   button.main{background:#3b82f6;color:#fff}
   select{appearance:auto}
   .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
@@ -55,8 +55,11 @@
     <button id="who">You start</button>
     <button id="hint">Hint</button>
     <button id="new" class="main">New game</button>
+    <button id="musicBtn">🔇 Music: Off</button>
   </div>
 </div>
+
+<audio id="bgm" src="Bgm.mp3" loop></audio>
 
 <div class="card">
   <div class="stats">
@@ -77,13 +80,12 @@
 <script>
 'use strict';
 // ==== AI START ====
-// Cell index = column * 6 + row (row 0 is the bottom). Pieces: 0 empty, 1 first player, 2 second player.
 const COLS = 7, ROWS = 6, WIN = 100000, INF = 1000000000;
-const ORDER = [3, 2, 4, 1, 5, 0, 6];            // centre columns first = better pruning
-const SC_ME = [0, 0, 3, 12, 0];                  // my pieces in an open window of 4
-const SC_OPP = [0, 0, 3, 14, 0];                 // opponent pieces in an open window
-const WINDOWS = [];                              // all 69 possible four-in-a-row lines
-const WINS_FOR = Array.from({ length: 42 }, () => []);   // windows that contain each cell
+const ORDER = [3, 2, 4, 1, 5, 0, 6];
+const SC_ME = [0, 0, 3, 12, 0];
+const SC_OPP = [0, 0, 3, 14, 0];
+const WINDOWS = [];
+const WINS_FOR = Array.from({ length: 42 }, () => []);
 (function () {
   const dirs = [[1, 0], [0, 1], [1, 1], [1, -1]];
   for (let c = 0; c < COLS; c++) for (let r = 0; r < ROWS; r++) for (const [dc, dr] of dirs) {
@@ -96,7 +98,6 @@ const WINS_FOR = Array.from({ length: 42 }, () => []);   // windows that contain
   }
 })();
 
-// Would player p complete four in a row by playing on `cell`?
 function isWinningMove(b, cell, p) {
   const ids = WINS_FOR[cell];
   for (let n = 0; n < ids.length; n++) {
@@ -108,7 +109,6 @@ function isWinningMove(b, cell, p) {
   return false;
 }
 
-// Heuristic score from the point of view of player `me`.
 function evaluate(b, me) {
   const opp = 3 - me;
   let s = 0;
@@ -123,11 +123,10 @@ function evaluate(b, me) {
 }
 
 let nodes = 0;
-// Negamax with alpha-beta pruning. Returns the score for the player to move.
 function negamax(b, h, moves, depth, alpha, beta, me) {
   nodes++;
   if (moves === 42) return 0;
-  for (let i = 0; i < 7; i++) {                  // can I win right now?
+  for (let i = 0; i < 7; i++) {
     const c = ORDER[i];
     if (h[c] < 6 && isWinningMove(b, c * 6 + h[c], me)) return WIN - moves;
   }
@@ -142,7 +141,7 @@ function negamax(b, h, moves, depth, alpha, beta, me) {
     h[c]--; b[cell] = 0;
     if (v > best) best = v;
     if (v > alpha) alpha = v;
-    if (alpha >= beta) break;                    // prune
+    if (alpha >= beta) break;
   }
   return best;
 }
@@ -176,6 +175,22 @@ let youStart = true;
 let score = { human: 0, draw: 0, ai: 0 };
 try { const s = JSON.parse(localStorage.getItem('c4score')); if (s) score = s; } catch (e) {}
 
+// ---------- Background Music ----------
+const bgm = $('bgm');
+bgm.volume = 0.3;
+let musicPlaying = false;
+
+$('musicBtn').onclick = () => {
+  if (musicPlaying) {
+    bgm.pause();
+    $('musicBtn').textContent = '🔇 Music: Off';
+  } else {
+    bgm.play();
+    $('musicBtn').textContent = '🔊 Music: On';
+  }
+  musicPlaying = !musicPlaying;
+};
+
 function saveScore() { try { localStorage.setItem('c4score', JSON.stringify(score)); } catch (e) {} }
 function turnPlayer() { return 1 + (moves & 1); }
 
@@ -207,7 +222,6 @@ function render() {
 function place(col, p) {
   const cell = col * 6 + heights[col];
   board[cell] = p; heights[col]++; moves++; lastCell = cell; hintCol = -1;
-  // check for a win through the new piece
   for (const id of WINS_FOR[cell]) {
     const w = WINDOWS[id];
     if (w.every(i => board[i] === p)) { winCells = w.slice(); over = true; return 'win'; }
@@ -266,4 +280,4 @@ updateScore();
 newGame();
 </script>
 </body>
-  </html>
+</html>
