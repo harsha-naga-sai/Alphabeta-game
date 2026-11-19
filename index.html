@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#140a33">
+<title>Four in a Row - AI &amp; Multiplayer</title>
+<style>
+:root{--red:#ff4d6d;--red2:#c9184a;--yel:#ffd23f;--yel2:#f4a300;--ink:#f4f1ff;--mut:#b9b0e0;--glass:rgba(255,255,255,.08);--line:rgba(255,255,255,.16);--acc1:#a855f7;--acc2:#3b82f6;--ok:#34d399}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0}
+body{min-height:100vh;color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:linear-gradient(135deg,#140a33,#0b1d52,#2a0f4a,#0a2a5e);background-size:400% 400%;animation:bgmove 22s ease infinite;overflow-x:hidden}
+@keyframes bgmove{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+.hidden{display:none!important}
+svg.ico{width:1.25em;height:1.25em;vertical-align:-.25em;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+#bg{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:0}
+#bg i{position:absolute;bottom:-80px;border-radius:50%;opacity:.22;animation:floatup linear infinite}
+#bg i.r{background:var(--red)}#bg i.y{background:var(--yel)}
+@keyframes floatup{from{transform:translateY(0) rotate(0)}to{transform:translateY(-120vh) rotate(360deg)}}
+#confetti{position:fixed;inset:0;pointer-events:none;z-index:60}
+#app{position:relative;z-index:1;max-width:520px;margin:0 auto;padding:12px 14px 40px}
+.top{display:flex;align-items:center;gap:8px;margin-bottom:10px}.top .sp{flex:1}
+.ib{width:42px;height:42px;border-radius:12px;border:1px solid var(--line);background:var(--glass);color:var(--ink);cursor:pointer;display:grid;place-items:center}
+.ib:active{transform:scale(.92)}.ib.off{opacity:.45}
+.coins{display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:999px;font-weight:800;font-size:16px;background:rgba(255,210,63,.2);border:1px solid rgba(255,210,63,.5);color:var(--yel)}
+.coins span{color:var(--ink)}.coins.bump{animation:bump .45s}
+@keyframes bump{30%{transform:scale(1.18)}100%{transform:scale(1)}}
+.glass{background:var(--glass);border:1px solid var(--line);border-radius:18px;padding:14px;backdrop-filter:blur(12px);box-shadow:0 10px 30px rgba(0,0,0,.28);margin-bottom:12px}
+h1{margin:6px 0 2px;font-size:32px;text-align:center;background:linear-gradient(90deg,var(--red),var(--yel));-webkit-background-clip:text;background-clip:text;color:transparent}
+h2{margin:0 0 8px;font-size:18px}
+.tag{text-align:center;color:var(--mut);font-size:13px;margin-bottom:14px}
+.logo{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;width:150px;margin:10px auto 8px}
+.logo b{aspect-ratio:1;border-radius:50%;animation:pop 2.4s ease-in-out infinite}
+.logo b:nth-child(odd){background:var(--red)}.logo b:nth-child(even){background:var(--yel)}
+.logo b:nth-child(3n){animation-delay:.3s}.logo b:nth-child(4n){animation-delay:.6s}
+@keyframes pop{0%,100%{transform:scale(1)}50%{transform:scale(.8)}}
+.big{display:flex;align-items:center;gap:14px;width:100%;text-align:left;border:0;border-radius:18px;padding:16px;margin-bottom:12px;color:#fff;cursor:pointer;font-size:18px;font-weight:800;box-shadow:0 10px 24px rgba(0,0,0,.35);transition:transform .15s}
+.big:hover{transform:translateY(-3px)}.big:active{transform:scale(.98)}
+.big small{display:block;font-weight:500;font-size:12.5px;opacity:.9;margin-top:2px}
+.big .em{width:46px;height:46px;border-radius:14px;background:rgba(255,255,255,.16);display:grid;place-items:center;flex:none}
+.big .em svg{width:26px;height:26px}
+.big.a{background:linear-gradient(135deg,#7c3aed,#3b82f6)}.big.b{background:linear-gradient(135deg,#f43f5e,#f59e0b)}.big.c{background:linear-gradient(135deg,#059669,#0284c7)}
+button.btn{border:0;border-radius:12px;padding:12px 14px;font-size:15px;font-weight:700;color:#fff;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;background:linear-gradient(135deg,var(--acc1),var(--acc2));box-shadow:0 6px 14px rgba(0,0,0,.3)}
+button.btn:active{transform:scale(.95)}button.btn.alt{background:rgba(255,255,255,.14);box-shadow:none;border:1px solid var(--line)}
+button.btn.gold{background:linear-gradient(135deg,var(--yel),var(--yel2));color:#3b2a00}
+button.btn:disabled{opacity:.4;cursor:not-allowed}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.row.c{justify-content:center}
+.lvl{display:flex;align-items:center;gap:12px;padding:12px;border-radius:16px;margin-bottom:10px;border:1px solid var(--line);background:var(--glass);cursor:pointer}
+.lvl:hover{border-color:var(--acc1)}
+.lvl .ic{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;background:rgba(255,255,255,.1);color:var(--yel)}
+.lvl .tx{flex:1;min-width:0}.lvl .nm{font-weight:800}.lvl .ds{font-size:12px;color:var(--mut);margin-top:2px}
+.lvl .rt{font-size:12px;color:var(--yel);font-weight:700;text-align:right}
+.lvl.locked{opacity:.6;cursor:not-allowed}.lvl.locked .ic{color:var(--mut)}
+.bar{height:6px;border-radius:99px;background:rgba(255,255,255,.12);margin-top:6px;overflow:hidden}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--ok),var(--yel))}
+.shake{animation:shake .35s}@keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.seg{display:flex;background:rgba(255,255,255,.1);border-radius:12px;padding:3px}
+.seg button{flex:1;border:0;background:transparent;color:var(--ink);padding:9px;border-radius:10px;font-weight:700;cursor:pointer}
+.seg button.on{background:linear-gradient(135deg,var(--acc1),var(--acc2))}
+.strip{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.pl{flex:1;display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:14px;background:var(--glass);border:1px solid var(--line);font-weight:700;font-size:14px;min-width:0}
+.pl .n{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pl.active{border-color:var(--yel);box-shadow:0 0 0 2px rgba(255,210,63,.35)}
+.dotc{width:18px;height:18px;border-radius:50%;flex:none}
+.p1{background:radial-gradient(circle at 35% 30%,#ff9fb2,var(--red) 45%,var(--red2))}
+.p2{background:radial-gradient(circle at 35% 30%,#fff0a8,var(--yel) 45%,var(--yel2))}
+.pool{padding:6px 10px;border-radius:12px;background:rgba(255,210,63,.15);border:1px solid rgba(255,210,63,.4);font-size:12px;font-weight:800;text-align:center;color:var(--yel)}
+#status{font-size:18px;font-weight:800;text-align:center;min-height:30px;margin:6px 0 10px}
+#board{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;padding:8px;border-radius:20px;touch-action:manipulation;background:linear-gradient(160deg,#2563eb,#1e3a9f);box-shadow:0 14px 30px rgba(0,0,0,.45)}
+.col{display:flex;flex-direction:column;gap:6px;border-radius:14px}.col.can{cursor:pointer}
+@media (hover:hover){.col.can:hover{background:rgba(255,255,255,.13)}}
+.cell{position:relative;aspect-ratio:1;border-radius:50%;background:#0a1030;box-shadow:inset 0 4px 8px rgba(0,0,0,.65)}
+.disc{position:absolute;inset:5%;border-radius:50%;box-shadow:inset 0 -5px 7px rgba(0,0,0,.28),inset 0 4px 6px rgba(255,255,255,.3)}
+.disc.drop{animation:drop calc(.28s + var(--d)*.045s) both}
+@keyframes drop{0%{transform:translateY(calc(var(--d)*-112%));animation-timing-function:cubic-bezier(.5,0,1,.7)}62%{transform:translateY(0)}75%{transform:translateY(-10%)}88%,100%{transform:translateY(0)}}
+.cell.win .disc{animation:glow .7s ease-in-out infinite alternate;outline:3px solid #fff;outline-offset:-3px}
+@keyframes glow{from{transform:scale(1)}to{transform:scale(.86);filter:brightness(1.35)}}
+.cell.hint::after{content:"";position:absolute;inset:14%;border-radius:50%;border:3px dashed #7ee787;animation:spin 3s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ctr{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+.note{font-size:12px;color:var(--mut);line-height:1.6}
+.code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:44px;font-weight:900;letter-spacing:8px;text-align:center;margin:8px 0;background:linear-gradient(90deg,var(--yel),var(--red));-webkit-background-clip:text;background-clip:text;color:transparent}
+input.in{width:100%;padding:14px;border-radius:12px;border:1px solid var(--line);background:rgba(0,0,0,.3);color:var(--ink);font-size:26px;font-weight:800;letter-spacing:6px;text-align:center;text-transform:uppercase;font-family:ui-monospace,Menlo,Consolas,monospace}
+.spn{width:20px;height:20px;border-radius:50%;border:3px solid rgba(255,255,255,.25);border-top-color:var(--yel);animation:spin .9s linear infinite;display:inline-block;vertical-align:middle;margin-right:8px}
+.err{color:#ff8fa3;font-size:13px;font-weight:700;margin-top:8px;text-align:center}
+.modal{position:fixed;inset:0;z-index:50;background:rgba(5,3,20,.7);backdrop-filter:blur(4px);display:grid;place-items:center;padding:20px}
+.sheet{width:100%;max-width:360px;text-align:center;padding:22px 18px;border-radius:24px;background:linear-gradient(160deg,#2b1760,#14275c);border:1px solid var(--line);box-shadow:0 20px 50px rgba(0,0,0,.6)}
+.sheet .em{width:68px;height:68px;margin:0 auto 6px;border-radius:50%;background:rgba(255,255,255,.1);display:grid;place-items:center;color:var(--yel)}
+.sheet .em svg{width:38px;height:38px}.sheet h2{font-size:26px;margin:6px 0}
+.sheet .gain{font-size:30px;font-weight:900;color:var(--yel);margin:8px 0}.sheet p{color:var(--mut);font-size:14px;margin:4px 0}
+#toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,40px);opacity:0;z-index:80;background:#0c0a22;border:1px solid var(--yel);color:var(--ink);padding:11px 16px;border-radius:14px;font-weight:700;font-size:14px;max-width:90vw;text-align:center;transition:all .3s;pointer-events:none}
+#toast.show{transform:translate(-50%,0);opacity:1}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01s!important;animation-iteration-count:1!important}}
+</style>
+</head>
+<body>
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none">
+<symbol id="i-back" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></symbol>
+<symbol id="i-coin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9.5 9.5h4a1.5 1.5 0 0 1 0 3h-3a1.5 1.5 0 0 0 0 3h4"/></symbol>
+<symbol id="i-music" viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></symbol>
+<symbol id="i-vol" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></symbol>
+<symbol id="i-bot" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/></symbol>
+<symbol id="i-users" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+<symbol id="i-local" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></symbol>
+<symbol id="i-trophy" viewBox="0 0 24 24"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></symbol>
+<symbol id="i-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></symbol>
+<symbol id="i-key" viewBox="0 0 24 24"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></symbol>
+<symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></symbol>
+<symbol id="i-share" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></symbol>
+<symbol id="i-undo" viewBox="0 0 24 24"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></symbol>
+<symbol id="i-hint" viewBox="0 0 24 24"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.7.6 1 1.4 1 2.3h6c0-.9.3-1.7 1-2.3A7 7 0 0 0 12 2z"/></symbol>
+<symbol id="i-new" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></symbol>
+<symbol id="i-star" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></symbol>
+<symbol id="i-draw" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="8" y1="15" x2="16" y2="15"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></symbol>
+<symbol id="i-sad" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M16 16s-1.5-2-4-2-4 2-4 2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></symbol>
+</svg>
+
+<div id="bg"></div>
+<canvas id="confetti"></canvas>
+
+<div id="app">
+  <div class="top">
+    <button class="ib hidden" id="btnBack" aria-label="Back"><svg class="ico"><use href="#i-back"/></svg></button>
+    <div class="sp"></div>
+    <div class="coins" id="coinChip"><svg class="ico"><use href="#i-coin"/></svg> <span id="coinN">0</span></div>
+    <button class="ib" id="btnMusic" aria-label="Music"><svg class="ico"><use href="#i-music"/></svg></button>
+    <button class="ib" id="btnSfx" aria-label="Sound effects"><svg class="ico"><use href="#i-vol"/></svg></button>
+  </div>
+
+  <section id="scrMenu">
+    <div class="logo"><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b></div>
+    <h1>Four in a Row</h1>
+    <div class="tag">Win matches, earn coins, unlock tougher AI levels.</div>
+    <button class="big a" id="goAI"><span class="em"><svg class="ico"><use href="#i-bot"/></svg></span><span>Play vs Computer<small>5 AI levels · hints · undo</small></span></button>
+    <button class="big b" id="goFriends"><span class="em"><svg class="ico"><use href="#i-users"/></svg></span><span>Play Online with Friends<small>Create a room or join with an ID · 50 coins each</small></span></button>
+    <button class="big c" id="goLocal"><span class="em"><svg class="ico"><use href="#i-local"/></svg></span><span>Pass &amp; Play (2 Players)<small>Offline match on the same device</small></span></button>
+    <div class="glass note" id="menuInfo"></div>
+  </section>
+
+  <section id="scrLevels" class="hidden">
+    <div class="glass">
+      <h2>Choose Difficulty</h2>
+      <div class="note" style="margin-bottom:10px">Easy is unlocked by default. Beat each level 3 times to unlock the next (Grandmaster needs 7 wins on Expert).</div>
+      <div class="seg" id="firstSeg"><button data-f="1" class="on">I go first</button><button data-f="0">AI goes first</button></div>
+    </div>
+    <div id="levelList"></div>
+  </section>
+
+  <section id="scrFriends" class="hidden">
+    <div class="glass" id="fChoose">
+      <h2>Online Multiplayer</h2>
+      <div class="note" style="margin-bottom:12px">Each player stakes <b>50 coins</b>. The winner takes the <b>100 coin</b> pool plus a <b>100 coin</b> bonus. A draw refunds both stakes.</div>
+      <button class="btn gold" style="width:100%;margin-bottom:10px;padding:16px;font-size:16px" id="btnCreate"><svg class="ico"><use href="#i-plus"/></svg> Create Room</button>
+      <button class="btn" style="width:100%;padding:16px;font-size:16px" id="btnJoinGo"><svg class="ico"><use href="#i-key"/></svg> Join with Room ID</button>
+      <div class="err" id="fErr"></div>
+    </div>
+    <div class="glass hidden" id="fHost">
+      <h2>Your Room ID</h2>
+      <div class="code" id="roomCode">·····</div>
+      <div class="row c" style="margin-bottom:10px">
+        <button class="btn alt" id="btnCopy"><svg class="ico"><use href="#i-copy"/></svg> Copy</button>
+        <button class="btn alt" id="btnShare"><svg class="ico"><use href="#i-share"/></svg> Share</button>
+      </div>
+      <div class="note" style="text-align:center"><span class="spn"></span>Waiting for your friend to join…</div>
+    </div>
+    <div class="glass hidden" id="fJoin">
+      <h2>Enter Room ID</h2>
+      <input class="in" id="joinIn" maxlength="5" placeholder="•••••" autocomplete="off">
+      <button class="btn gold" style="width:100%;margin-top:12px;padding:14px" id="btnJoin">Join Game</button>
+      <div class="err" id="jErr"></div>
+    </div>
+  </section>
+
+  <section id="scrGame" class="hidden">
+    <div class="strip">
+      <div class="pl" id="pl1"><i class="dotc p1"></i><span class="n" id="n1">You</span></div>
+      <div class="pool hidden" id="pool">Pool<br>100</div>
+      <div class="pl" id="pl2"><i class="dotc p2"></i><span class="n" id="n2">AI</span></div>
+    </div>
+    <div id="status"></div>
+    <div id="board"></div>
+    <div class="ctr">
+      <button class="btn alt" id="btnUndo"><svg class="ico"><use href="#i-undo"/></svg> Undo (5)</button>
+      <button class="btn alt" id="btnHint"><svg class="ico"><use href="#i-hint"/></svg> Hint (10)</button>
+      <button class="btn alt" id="btnNew"><svg class="ico"><use href="#i-new"/></svg> New</button>
+    </div>
+  </section>
+</div>
+<div id="toast"></div>
+<div id="modal" class="modal hidden"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script>
+(function(){
+"use strict";
+const R=6,C=7,$=id=>document.getElementById(id);
+const ico=n=>'<svg class="ico"><use href="#i-'+n+'"/></svg>';
+
+/* ---------- storage (safe) ---------- */
+const KEY="c4row-save-v1";
+let S={coins:100,wins:[0,0,0,0,0],sfx:true,music:false};
+try{const x=JSON.parse(localStorage.getItem(KEY)||"null");if(x&&typeof x==="object")S=Object.assign(S,x)}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+
+/* ---------- levels ---------- */
+const LV=[
+ {nm:"Easy",ds:"Plays casually, makes mistakes",d:1,rnd:.5,rw:10,ic:"i-lvl"},
+ {nm:"Medium",ds:"Blocks obvious threats",d:3,rnd:.2,rw:20},
+ {nm:"Hard",ds:"Plans several moves ahead",d:5,rnd:.05,rw:35},
+ {nm:"Expert",ds:"Very tough opponent",d:7,rnd:0,rw:60},
+ {nm:"Grandmaster",ds:"Near perfect play",d:9,rnd:0,rw:100}
+];
+const NEED=[0,3,3,3,7]; // wins on previous level needed to unlock this level
+const unlocked=i=>i===0||S.wins[i-1]>=NEED[i];
+
+/* ---------- ui helpers ---------- */
+function toast(t){const e=$("toast");e.textContent=t;e.classList.add("show");clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove("show"),2200)}
+function setCoins(delta){S.coins=Math.max(0,S.coins+delta);save();$("coinN").textContent=S.coins;const c=$("coinChip");c.classList.remove("bump");void c.offsetWidth;c.classList.add("bump")}
+const screens=["scrMenu","scrLevels","scrFriends","scrGame"];
+let cur="scrMenu";
+function show(id){cur=id;screens.forEach(s=>$(s).classList.toggle("hidden",s!==id));$("btnBack").classList.toggle("hidden",id==="scrMenu");if(id==="scrMenu")menuInfo();window.scrollTo(0,0)}
+function menuInfo(){$("menuInfo").innerHTML="Wins: "+S.wins.map((w,i)=>LV[i].nm+" "+w).join(" · ")}
+
+/* floating bubbles */
+(function(){const bg=$("bg");for(let i=0;i<14;i++){const e=document.createElement("i"),s=20+Math.random()*40;e.className=Math.random()<.5?"r":"y";e.style.cssText="left:"+Math.random()*100+"%;width:"+s+"px;height:"+s+"px;animation-duration:"+(14+Math.random()*16)+"s;animation-delay:-"+Math.random()*20+"s";bg.appendChild(e)}})();
+
+/* ---------- audio ---------- */
+let AC=null,musicT=null;
+function ac(){if(!AC){try{AC=new(window.AudioContext||window.webkitAudioContext)()}catch(e){}}if(AC&&AC.state==="suspended")AC.resume();return AC}
+function tone(f,d,type,v,when){const a=ac();if(!a)return;const t=a.currentTime+(when||0),o=a.createOscillator(),g=a.createGain();o.type=type||"sine";o.frequency.value=f;g.gain.setValueAtTime(v||.1,t);g.gain.exponentialRampToValueAtTime(.001,t+d);o.connect(g);g.connect(a.destination);o.start(t);o.stop(t+d)}
+const sfx={drop(){if(S.sfx){tone(220,.12,"triangle",.15);tone(160,.1,"sine",.1,.12)}},win(){if(S.sfx)[523,659,784,1047].forEach((f,i)=>tone(f,.25,"triangle",.14,i*.12))},lose(){if(S.sfx)[330,277,233].forEach((f,i)=>tone(f,.3,"sawtooth",.08,i*.18))},click(){if(S.sfx)tone(600,.05,"square",.05)}};
+function musicOn(){const notes=[262,330,392,523,392,330],n={i:0};clearInterval(musicT);musicT=setInterval(()=>{tone(notes[n.i++%notes.length],.35,"sine",.04)},400)}
+function syncAudioBtns(){$("btnSfx").classList.toggle("off",!S.sfx);$("btnMusic").classList.toggle("off",!S.music)}
+$("btnSfx").onclick=()=>{S.sfx=!S.sfx;save();syncAudioBtns();sfx.click()};
+$("btnMusic").onclick=()=>{S.music=!S.music;save();syncAudioBtns();if(S.music){ac();musicOn()}else clearInterval(musicT)};
+
+/* ---------- confetti ---------- */
+function confetti(){const cv=$("confetti"),x=cv.getContext("2d");cv.width=innerWidth;cv.height=innerHeight;const ps=[];for(let i=0;i<120;i++)ps.push({x:Math.random()*cv.width,y:-20-Math.random()*cv.height*.5,vx:(Math.random()-.5)*3,vy:2+Math.random()*4,s:5+Math.random()*6,c:["#ff4d6d","#ffd23f","#a855f7","#3b82f6","#34d399"][i%5],r:Math.random()*6});let f=0;(function loop(){x.clearRect(0,0,cv.width,cv.height);ps.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.r+=.1;x.save();x.translate(p.x,p.y);x.rotate(p.r);x.fillStyle=p.c;x.fillRect(-p.s/2,-p.s/2,p.s,p.s*.6);x.restore()});if(++f<150)requestAnimationFrame(loop);else x.clearRect(0,0,cv.width,cv.height)})()}
+
+/* ---------- board logic ---------- */
+const newBoard=()=>new Array(R*C).fill(0);
+function dropRow(b,c){for(let r=R-1;r>=0;r--)if(!b[r*C+c])return r;return -1}
+const DIRS=[[0,1],[1,0],[1,1],[1,-1]];
+function winCells(b,p){
+  for(let r=0;r<R;r++)for(let c=0;c<C;c++){
+    if(b[r*C+c]!==p)continue;
+    for(const[dr,dc]of DIRS){
+      const cells=[r*C+c];let ok=true;
+      for(let k=1;k<4;k++){const rr=r+dr*k,cc=c+dc*k;if(rr<0||rr>=R||cc<0||cc>=C||b[rr*C+cc]!==p){ok=false;break}cells.push(rr*C+cc)}
+      if(ok)return cells;
+    }
+  }
+  return null;
+}
+const full=b=>b.every(x=>x);
+const ORDER=[3,2,4,1,5,0,6];
+
+/* ---------- AI (negamax + alpha-beta) ---------- */
+function evalWin(b,p){
+  const o=3-p;let sc=0;
+  for(let r=0;r<R;r++)if(b[r*C+3]===p)sc+=3;
+  for(let r=0;r<R;r++)for(let c=0;c<C;c++)for(const[dr,dc]of DIRS){
+    let mine=0,theirs=0,ok=true;
+    for(let k=0;k<4;k++){const rr=r+dr*k,cc=c+dc*k;if(rr<0||rr>=R||cc<0||cc>=C){ok=false;break}const v=b[rr*C+cc];if(v===p)mine++;else if(v===o)theirs++}
+    if(!ok||(mine&&theirs))continue;
+    if(mine===3)sc+=50;else if(mine===2)sc+=5;else if(mine===1)sc+=1;
+    if(theirs===3)sc-=60;else if(theirs===2)sc-=5;
+  }
+  return sc;
+}
+function negamax(b,p,d,a,be,last){
+  const o=3-p;
+  if(last&&winCells(b,o))return -100000-d;
+  if(full(b))return 0;
+  if(d===0)return evalWin(b,p);
+  let best=-Infinity;
+  for(const c of ORDER){
+    const r=dropRow(b,c);if(r<0)continue;
+    b[r*C+c]=p;
+    const v=-negamax(b,o,d-1,-be,-a,true);
+    b[r*C+c]=0;
+    if(v>best)best=v;if(best>a)a=best;if(a>=be)break;
+  }
+  return best;
+}
+function bestMove(b,p,depth,rnd){
+  const valid=ORDER.filter(c=>dropRow(b,c)>=0);
+  if(!valid.length)return -1;
+  // always take a win / block when not "casual"
+  for(const pl of[p,3-p]){
+    for(const c of valid){const r=dropRow(b,c);b[r*C+c]=pl;const w=winCells(b,pl);b[r*C+c]=0;if(w&&(Math.random()>rnd))return c}
+  }
+  if(Math.random()<rnd)return valid[Math.floor(Math.random()*valid.length)];
+  let best=-Infinity,bc=valid[0];
+  for(const c of valid){
+    const r=dropRow(b,c);b[r*C+c]=p;
+    const v=-negamax(b,3-p,depth-1,-Infinity,Infinity,true);
+    b[r*C+c]=0;
+    if(v>best){best=v;bc=c}
+  }
+  return bc;
+}
+
+/* ---------- game state ---------- */
+let G=null;
+function names(){
+  if(G.mode==="ai"){return G.aiFirst?["AI","You"]:["You","AI"]}
+  if(G.mode==="online")return G.me===1?["You","Friend"]:["Friend","You"];
+  return["Player 1","Player 2"];
+}
+function startGame(opts){
+  G=Object.assign({b:newBoard(),turn:1,over:false,hist:[],busy:false,last:-1,hint:-1},opts);
+  const n=names();$("n1").textContent=n[0];$("n2").textContent=n[1];
+  $("pool").classList.toggle("hidden",G.mode!=="online");
+  $("btnUndo").classList.toggle("hidden",G.mode!=="ai");
+  $("btnHint").classList.toggle("hidden",G.mode==="online");
+  $("btnNew").classList.toggle("hidden",G.mode==="online");
+  closeModal();show("scrGame");render();
+  if(G.mode==="ai"&&G.turn===aiPlayer())aiTurn();
+}
+const aiPlayer=()=>G.aiFirst?1:2;
+const myTurn=()=>{
+  if(G.over||G.busy)return false;
+  if(G.mode==="ai")return G.turn!==aiPlayer();
+  if(G.mode==="online")return G.turn===G.me;
+  return true;
+};
+function render(win){
+  const bd=$("board");bd.innerHTML="";
+  const winSet=new Set(win||[]);
+  for(let c=0;c<C;c++){
+    const col=document.createElement("div");col.className="col"+(myTurn()&&dropRow(G.b,c)>=0?" can":"");
+    for(let r=0;r<R;r++){
+      const i=r*C+c,cell=document.createElement("div");cell.className="cell"+(winSet.has(i)?" win":"")+(G.hint===c&&dropRow(G.b,c)===r?" hint":"");
+      if(G.b[i]){const d=document.createElement("div");d.className="disc p"+G.b[i];if(i===G.last){d.classList.add("drop");d.style.setProperty("--d",r+1)}cell.appendChild(d)}
+      col.appendChild(cell);
+    }
+    col.onclick=()=>play(c);
+    bd.appendChild(col);
+  }
+  $("pl1").classList.toggle("active",!G.over&&G.turn===1);
+  $("pl2").classList.toggle("active",!G.over&&G.turn===2);
+  let st="";
+  if(!G.over){
+    if(G.mode==="ai")st=G.turn===aiPlayer()?'<span class="spn"></span>AI is thinking…':"Your turn";
+    else if(G.mode==="online")st=G.turn===G.me?"Your turn":"Friend's turn…";
+    else st=names()[G.turn-1]+"'s turn";
+  }
+  $("status").innerHTML=st;
+  $("btnUndo").disabled=!(G.mode==="ai"&&G.hist.length>=1&&!G.busy);
+}
+function play(c){
+  if(!myTurn())return;
+  const ok=applyMove(c);
+  if(ok&&G.mode==="online"&&G.conn&&G.conn.open)G.conn.send({t:"move",c});
+}
+function applyMove(c){
+  if(!G||G.over)return false;
+  const r=dropRow(G.b,c);if(r<0){toast("Column is full");return false}
+  G.b[r*C+c]=G.turn;G.last=r*C+c;G.hist.push(r*C+c);G.hint=-1;
+  sfx.drop();
+  const w=winCells(G.b,G.turn);
+  if(w){G.over=true;render(w);setTimeout(()=>finish(G.turn),900);return true}
+  if(full(G.b)){G.over=true;render();setTimeout(()=>finish(0),700);return true}
+  G.turn=3-G.turn;render();
+  if(G.mode==="ai"&&G.turn===aiPlayer())aiTurn();
+  return true;
+}
+function aiTurn(){
+  G.busy=true;render();
+  const lv=LV[G.lvl],snap=G;
+  setTimeout(()=>{
+    if(G!==snap||G.over){return}
+    const c=bestMove(G.b.slice(),aiPlayer(),lv.d,lv.rnd);
+    G.busy=false;applyMove(c);
+  },450);
+}
+
+/* ---------- finish / rewards ---------- */
+function finish(winner){
+  let icon="trophy",title="",gain="",sub="";
+  if(G.mode==="ai"){
+    const me=G.aiFirst?2:1;
+    if(winner===me){
+      const lv=LV[G.lvl];S.wins[G.lvl]++;setCoins(lv.rw);sfx.win();confetti();
+      title="You Win!";gain="+"+lv.rw+" coins";
+      const nxt=G.lvl+1;
+      if(nxt<LV.length&&S.wins[G.lvl]===NEED[nxt])sub=LV[nxt].nm+" unlocked!";
+      else sub=LV[G.lvl].nm+" wins: "+S.wins[G.lvl];
+      save();
+    }else if(winner===0){icon="draw";title="Draw";gain="+5 coins";setCoins(5);sub="Nobody wins this time."}
+    else{icon="sad";title="You Lost";gain="+0 coins";sfx.lose();sub="Try again or pick an easier level."}
+  }else if(G.mode==="online"){
+    if(winner===G.me){setCoins(200);sfx.win();confetti();title="You Win!";gain="+200 coins";sub="Stake back + pool + bonus"}
+    else if(winner===0){setCoins(50);icon="draw";title="Draw";gain="+50 coins";sub="Stake refunded"}
+    else{icon="sad";sfx.lose();title="You Lost";gain="-50 coins";sub="Better luck next round."}
+  }else{
+    if(winner){sfx.win();confetti();title=names()[winner-1]+" Wins!"}else{icon="draw";title="Draw"}
+  }
+  let btns='';
+  if(G.mode==="online")btns='<button class="btn gold" id="mAgain">Rematch</button><button class="btn alt" id="mMenu">Menu</button>';
+  else btns='<button class="btn gold" id="mAgain">Play Again</button><button class="btn alt" id="mMenu">Menu</button>';
+  openModal('<div class="em">'+ico(icon)+'</div><h2>'+title+'</h2>'+(gain?'<div class="gain'+(gain[0]==="-"?" neg":"")+'">'+gain+'</div>':'')+'<p>'+sub+'</p><div class="row c" style="margin-top:14px">'+btns+'</div>');
+  $("mMenu").onclick=()=>{closeModal();goMenu()};
+  $("mAgain").onclick=()=>{
+    if(G.mode==="online"){requestRematch()}
+    else{const o={mode:G.mode,lvl:G.lvl,aiFirst:G.aiFirst};
+      startGame(Object.assign(o,{turn:1}))}
+  };
+}
+function openModal(h){const m=$("modal");m.innerHTML='<div class="sheet">'+h+'</div>';m.classList.remove("hidden")}
+function closeModal(){$("modal").classList.add("hidden");$("modal").innerHTML=""}
+
+/* ---------- menu / levels ---------- */
+function goMenu(){leaveOnline();G=null;show("scrMenu");setCoins(0)}
+$("btnBack").onclick=()=>{sfx.click();closeModal();if(cur==="scrFriends"&&!$("fChoose").classList.contains("hidden")===false){}
+  if(cur==="scrGame"||cur==="scrFriends"||cur==="scrLevels"){
+    if(cur==="scrGame"&&G&&G.mode==="ai"){G=null;show("scrLevels");buildLevels();return}
+    goMenu()}};
+let aiFirst=false;
+$("firstSeg").onclick=e=>{const b=e.target.closest("button");if(!b)return;aiFirst=b.dataset.f==="0";[...$("firstSeg").children].forEach(x=>x.classList.toggle("on",x===b));sfx.click()};
+function buildLevels(){
+  const L=$("levelList");L.innerHTML="";
+  LV.forEach((lv,i)=>{
+    const open=unlocked(i),d=document.createElement("div");d.className="lvl"+(open?"":" locked");
+    const prog=i>0&&!open?'<div class="bar"><i style="width:'+Math.min(100,S.wins[i-1]/NEED[i]*100)+'%"></i></div>':"";
+    const need=i>0&&!open?"Beat "+LV[i-1].nm+" "+NEED[i]+"× ("+S.wins[i-1]+"/"+NEED[i]+")":lv.ds;
+    d.innerHTML='<div class="ic">'+ico(open?(i>=4?"star":"bot"):"lock")+'</div><div class="tx"><div class="nm">'+lv.nm+'</div><div class="ds">'+need+'</div>'+prog+'</div><div class="rt">+'+lv.rw+'<br>coins</div>';
+    d.onclick=()=>{
+      if(!open){d.classList.remove("shake");void d.offsetWidth;d.classList.add("shake");toast("Locked: "+need);return}
+      sfx.click();ac();startGame({mode:"ai",lvl:i,aiFirst,turn:1});
+    };
+    L.appendChild(d);
+  });
+}
+$("goAI").onclick=()=>{sfx.click();buildLevels();show("scrLevels")};
+$("goLocal").onclick=()=>{sfx.click();startGame({mode:"local",turn:1})};
+$("goFriends").onclick=()=>{sfx.click();resetFriends();show("scrFriends")};
+$("btnNew").onclick=()=>{if(!G)return;const o={mode:G.mode,lvl:G.lvl,aiFirst:G.aiFirst};startGame(o)};
+$("btnUndo").onclick=()=>{
+  if(!G||G.mode!=="ai"||G.busy||G.over)return;
+  if(S.coins<5)return toast("Need 5 coins");
+  // remove AI's last move and the player's move before it
+  const mine=G.aiFirst?2:1;let removed=0;
+  while(G.hist.length&&removed<2){const i=G.hist.pop();const owner=G.b[i];G.b[i]=0;removed++;if(owner===mine)break}
+  // ensure it's the player's turn
+  G.turn=mine;G.last=G.hist.length?G.hist[G.hist.length-1]:-1;
+  setCoins(-5);render();
+};
+$("btnHint").onclick=()=>{
+  if(!myTurn())return;
+  if(G.mode==="ai"&&S.coins<10)return toast("Need 10 coins");
+  const c=bestMove(G.b.slice(),G.turn,6,0);G.hint=c;
+  if(G.mode==="ai")setCoins(-10);
+  render();
+};
+
+/* ---------- online (PeerJS WebRTC) ---------- */
+const PFX="c4row-",ALPHA="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+let peer=null,conn=null,rematchMine=false,rematchTheirs=false;
+function resetFriends(){leaveOnline();$("fChoose").classList.remove("hidden");$("fHost").classList.add("hidden");$("fJoin").classList.add("hidden");$("fErr").textContent="";$("jErr").textContent=""}
+function leaveOnline(){try{if(conn)conn.close()}catch(e){}try{if(peer)peer.destroy()}catch(e){}conn=null;peer=null;rematchMine=rematchTheirs=false}
+function needPeer(){if(typeof Peer==="undefined"){$("fErr").textContent="Online play needs an internet connection (PeerJS failed to load).";return false}
+  if(S.coins<50){$("fErr").textContent="You need at least 50 coins to play online. Win some games vs the computer first!";return false}
+  $("fErr").textContent="";return true}
+function newCode(){let s="";for(let i=0;i<5;i++)s+=ALPHA[Math.floor(Math.random()*ALPHA.length)];return s}
+$("btnCreate").onclick=()=>{
+  sfx.click();if(!needPeer())return;
+  const code=newCode();leaveOnline();
+  try{peer=new Peer(PFX+code)}catch(e){$("fErr").textContent="Could not start online mode.";return}
+  peer.on("open",()=>{$("roomCode").textContent=code;$("fChoose").classList.add("hidden");$("fHost").classList.remove("hidden")});
+  peer.on("error",e=>{if(e.type==="unavailable-id"){$("btnCreate").click()}else{$("fErr").textContent="Connection error: "+e.type;resetFriendsKeepErr()}});
+  peer.on("connection",c=>{
+    if(conn){c.close();return}
+    conn=c;wire(c);
+    c.on("open",()=>{setCoins(-50);startGame({mode:"online",me:1,conn:c,turn:1})});
+  });
+};
+function resetFriendsKeepErr(){const m=$("fErr").textContent;resetFriends();$("fErr").textContent=m}
+$("btnJoinGo").onclick=()=>{sfx.click();if(!needPeer())return;$("fChoose").classList.add("hidden");$("fJoin").classList.remove("hidden");$("joinIn").value="";$("joinIn").focus()};
+$("btnJoin").onclick=()=>{
+  const code=$("joinIn").value.trim().toUpperCase();
+  if(code.length!==5){$("jErr").textContent="Room ID has 5 characters.";return}
+  if(S.coins<50){$("jErr").textContent="You need at least 50 coins.";return}
+  $("jErr").textContent="";$("btnJoin").disabled=true;$("btnJoin").textContent="Connecting…";
+  leaveOnline();
+  const fail=m=>{$("jErr").textContent=m;$("btnJoin").disabled=false;$("btnJoin").textContent="Join Game";leaveOnline()};
+  try{peer=new Peer()}catch(e){return fail("Could not start online mode.")}
+  const to=setTimeout(()=>fail("Room not found or friend is offline."),12000);
+  peer.on("error",e=>{clearTimeout(to);fail(e.type==="peer-unavailable"?"Room not found.":"Connection error: "+e.type)});
+  peer.on("open",()=>{
+    const c=peer.connect(PFX+code,{reliable:true});conn=c;wire(c);
+    c.on("open",()=>{clearTimeout(to);$("btnJoin").disabled=false;$("btnJoin").textContent="Join Game";setCoins(-50);startGame({mode:"online",me:2,conn:c,turn:1})});
+  });
+};
+$("joinIn").addEventListener("keydown",e=>{if(e.key==="Enter")$("btnJoin").click()});
+$("btnCopy").onclick=()=>{const t=$("roomCode").textContent;if(navigator.clipboard)navigator.clipboard.writeText(t).then(()=>toast("Room ID copied"),()=>toast(t));else toast(t)};
+$("btnShare").onclick=()=>{const t="Join my Four in a Row game! Room ID: "+$("roomCode").textContent+" — "+location.href;if(navigator.share)navigator.share({text:t}).catch(()=>{});else if(navigator.clipboard)navigator.clipboard.writeText(t).then(()=>toast("Invite copied"))};
+function wire(c){
+  c.on("data",m=>{
+    if(!m||!G||G.mode!=="online")return;
+    if(m.t==="move"&&G.turn!==G.me&&Number.isInteger(m.c)&&m.c>=0&&m.c<C)applyMove(m.c);
+    else if(m.t==="again"){rematchTheirs=true;if(rematchMine)beginRematch();else toast("Friend wants a rematch")}
+  });
+  c.on("close",()=>{if(G&&G.mode==="online"){if(!G.over){G.over=true;setCoins(100);openModal('<div class="em">'+ico("trophy")+'</div><h2>Friend left</h2><div class="gain">+100 coins</div><p>You get the pool because they disconnected.</p><div class="row c" style="margin-top:14px"><button class="btn gold" id="mMenu">Menu</button></div>');$("mMenu").onclick=()=>{closeModal();goMenu()}}else{toast("Friend disconnected");const a=$("mAgain");if(a)a.disabled=true}}});
+}
+function requestRematch(){
+  if(S.coins<50)return toast("Need 50 coins for a rematch");
+  rematchMine=true;try{G.conn.send({t:"again"})}catch(e){}
+  const a=$("mAgain");if(a){a.disabled=true;a.textContent="Waiting…"}
+  if(rematchTheirs)beginRematch();
+}
+function beginRematch(){
+  rematchMine=rematchTheirs=false;
+  if(S.coins<50){toast("Not enough coins");goMenu();return}
+  const me=G.me===1?2:1,c=G.conn;setCoins(-50);startGame({mode:"online",me,conn:c,turn:1});
+}
+
+/* ---------- init ---------- */
+syncAudioBtns();setCoins(0);menuInfo();show("scrMenu");
+window.addEventListener("pagehide",leaveOnline);
+})();
+</script>
+</body>
+</html>
