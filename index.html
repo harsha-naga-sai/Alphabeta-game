@@ -2,282 +2,307 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Connect 4 AI</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#140a33">
+<title>Connect 4 - Coins &amp; AI</title>
 <style>
-  :root{--bg:#0d1117;--card:#161b22;--line:#2a3441;--txt:#e6edf3;--mut:#8b98a8;--red:#ff4d5e;--yel:#ffd23f;--blue:#1f4fd8;--blue2:#1a3fae}
+  :root{
+    --red:#ff4d6d; --red2:#c9184a; --yel:#ffd23f; --yel2:#f4a300;
+    --ink:#f4f1ff; --mut:#b9b0e0; --glass:rgba(255,255,255,.08); --line:rgba(255,255,255,.16);
+    --acc1:#a855f7; --acc2:#3b82f6; --ok:#34d399;
+  }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-  body{margin:0;background:var(--bg);color:var(--txt);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:12px;max-width:520px;margin:auto}
-  h1{font-size:20px;margin:6px 0 2px}
-  .sub{color:var(--mut);font-size:12px;margin-bottom:10px}
-  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px;margin-bottom:10px}
-  #status{font-size:16px;font-weight:700;text-align:center;padding:6px 0 10px;min-height:34px}
-  #board{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;background:linear-gradient(var(--blue),var(--blue2));padding:8px;border-radius:14px;touch-action:manipulation}
-  .cell{position:relative;aspect-ratio:1;background:#0b1020;border-radius:50%;cursor:pointer;box-shadow:inset 0 3px 6px rgba(0,0,0,.6)}
-  .piece{position:absolute;inset:6%;border-radius:50%;box-shadow:inset 0 -4px 6px rgba(0,0,0,.25),inset 0 3px 5px rgba(255,255,255,.25)}
-  .p1{background:var(--red)}.p2{background:var(--yel)}
-  .drop{animation:drop .38s cubic-bezier(.45,.05,.55,.95)}
-  @keyframes drop{from{transform:translateY(calc(var(--d) * -112%))}to{transform:none}}
-  .win .piece{animation:pulse .8s ease-in-out infinite alternate;outline:3px solid #fff;outline-offset:-3px}
-  @keyframes pulse{from{transform:scale(1)}to{transform:scale(.88)}}
-  .hint .piece{opacity:.55}
-  .hintring{position:absolute;inset:14%;border-radius:50%;border:3px dashed #7ee787}
+  html,body{margin:0}
+  body{min-height:100vh;color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    background:linear-gradient(135deg,#140a33,#0b1d52,#2a0f4a,#0a2a5e);background-size:400% 400%;animation:bgmove 22s ease infinite;overflow-x:hidden}
+  @keyframes bgmove{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+  .hidden{display:none!important}
+
+  /* floating discs in the background */
+  #bg{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:0}
+  #bg i{position:absolute;bottom:-80px;border-radius:50%;opacity:.22;animation:floatup linear infinite;
+    box-shadow:inset 0 -6px 10px rgba(0,0,0,.3),inset 0 4px 8px rgba(255,255,255,.35)}
+  #bg i.r{background:var(--red)} #bg i.y{background:var(--yel)}
+  @keyframes floatup{from{transform:translateY(0) rotate(0)}to{transform:translateY(-120vh) rotate(360deg)}}
+  #confetti{position:fixed;inset:0;pointer-events:none;z-index:60}
+
+  #app{position:relative;z-index:1;max-width:520px;margin:0 auto;padding:12px 14px 40px}
+  .top{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+  .top .sp{flex:1}
+  .ib{width:42px;height:42px;border-radius:12px;border:1px solid var(--line);background:var(--glass);color:var(--ink);font-size:18px;
+    backdrop-filter:blur(8px);cursor:pointer;display:grid;place-items:center;transition:transform .12s}
+  .ib:active{transform:scale(.92)} .ib.off{opacity:.45}
+  .coins{display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:999px;font-weight:800;font-size:16px;
+    background:linear-gradient(135deg,rgba(255,210,63,.25),rgba(244,163,0,.18));border:1px solid rgba(255,210,63,.5);position:relative}
+  .coins.bump{animation:bump .45s}
+  @keyframes bump{30%{transform:scale(1.18)}100%{transform:scale(1)}}
+  .float{position:absolute;right:8px;top:100%;font-weight:900;color:var(--yel);pointer-events:none;animation:flt 1.2s ease-out forwards;text-shadow:0 2px 6px #000}
+  @keyframes flt{from{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(34px)}}
+
+  .glass{background:var(--glass);border:1px solid var(--line);border-radius:18px;padding:14px;backdrop-filter:blur(12px);
+    box-shadow:0 10px 30px rgba(0,0,0,.28);margin-bottom:12px}
+  h1{margin:6px 0 2px;font-size:34px;letter-spacing:.5px;text-align:center;
+    background:linear-gradient(90deg,var(--red),var(--yel));-webkit-background-clip:text;background-clip:text;color:transparent}
+  h2{margin:0 0 8px;font-size:18px}
+  .tag{text-align:center;color:var(--mut);font-size:13px;margin-bottom:14px}
+  .logo{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;width:150px;margin:10px auto 8px}
+  .logo b{aspect-ratio:1;border-radius:50%;animation:pop 2.4s ease-in-out infinite;box-shadow:inset 0 -4px 6px rgba(0,0,0,.3),inset 0 3px 5px rgba(255,255,255,.4)}
+  .logo b:nth-child(odd){background:var(--red)} .logo b:nth-child(even){background:var(--yel)}
+  .logo b:nth-child(3n){animation-delay:.3s}.logo b:nth-child(4n){animation-delay:.6s}.logo b:nth-child(5n){animation-delay:.9s}
+  @keyframes pop{0%,100%{transform:scale(1)}50%{transform:scale(.8)}}
+
+  .big{display:flex;align-items:center;gap:14px;width:100%;text-align:left;border:0;border-radius:18px;padding:18px 16px;margin-bottom:12px;color:#fff;cursor:pointer;
+    font-size:18px;font-weight:800;box-shadow:0 10px 24px rgba(0,0,0,.35);transition:transform .15s, filter .15s;position:relative;overflow:hidden}
+  .big:hover{transform:translateY(-3px);filter:brightness(1.08)} .big:active{transform:scale(.98)}
+  .big small{display:block;font-weight:500;font-size:12.5px;opacity:.9;margin-top:2px}
+  .big .em{font-size:34px}
+  .big.a{background:linear-gradient(135deg,#7c3aed,#3b82f6)} .big.b{background:linear-gradient(135deg,#f43f5e,#f59e0b)}
+  .big::after{content:"";position:absolute;inset:0;background:linear-gradient(120deg,transparent 30%,rgba(255,255,255,.25) 50%,transparent 70%);transform:translateX(-120%);animation:shine 4s infinite}
+  @keyframes shine{to{transform:translateX(120%)}}
+
+  button.btn{border:0;border-radius:12px;padding:12px 14px;font-size:15px;font-weight:700;color:#fff;cursor:pointer;
+    background:linear-gradient(135deg,var(--acc1),var(--acc2));box-shadow:0 6px 14px rgba(0,0,0,.3);transition:transform .12s,opacity .12s}
+  button.btn:active{transform:scale(.95)} button.btn.alt{background:rgba(255,255,255,.14);box-shadow:none;border:1px solid var(--line)}
+  button.btn.gold{background:linear-gradient(135deg,var(--yel),var(--yel2));color:#3b2a00}
+  button.btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
   .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-  button,select{background:#2a3647;color:var(--txt);border:0;border-radius:8px;padding:10px 12px;font-size:14px;font-weight:600;cursor:pointer}
-  button.main{background:#3b82f6;color:#fff}
-  select{appearance:auto}
+  .row.c{justify-content:center}.row>.grow{flex:1}
+
+  /* levels */
+  .lvl{display:flex;align-items:center;gap:12px;padding:12px;border-radius:16px;margin-bottom:10px;border:1px solid var(--line);
+    background:var(--glass);cursor:pointer;transition:transform .12s,border-color .12s}
+  .lvl:hover{transform:translateX(4px);border-color:var(--acc1)}
+  .lvl .ic{font-size:28px;width:46px;height:46px;border-radius:14px;display:grid;place-items:center;background:rgba(255,255,255,.1)}
+  .lvl .tx{flex:1;min-width:0} .lvl .nm{font-weight:800} .lvl .ds{font-size:12px;color:var(--mut);margin-top:2px}
+  .lvl .rt{font-size:12px;color:var(--yel);font-weight:700;text-align:right}
+  .lvl.locked{opacity:.6;cursor:not-allowed} .lvl.locked:hover{transform:none;border-color:var(--line)}
+  .bar{height:6px;border-radius:99px;background:rgba(255,255,255,.12);margin-top:6px;overflow:hidden}
+  .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--ok),var(--yel));border-radius:99px;transition:width .5s}
+  .shake{animation:shake .35s}
+  @keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+  .seg{display:flex;background:rgba(255,255,255,.1);border-radius:12px;padding:3px}
+  .seg button{flex:1;border:0;background:transparent;color:var(--ink);padding:9px;border-radius:10px;font-weight:700;cursor:pointer}
+  .seg button.on{background:linear-gradient(135deg,var(--acc1),var(--acc2))}
+
+  /* game */
+  .strip{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+  .pl{flex:1;display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:14px;background:var(--glass);border:1px solid var(--line);font-weight:700;font-size:14px;transition:all .2s;min-width:0}
+  .pl span.n{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .pl.active{border-color:var(--yel);box-shadow:0 0 0 2px rgba(255,210,63,.35),0 0 18px rgba(255,210,63,.25);transform:translateY(-2px)}
+  .dotc{width:18px;height:18px;border-radius:50%;flex:none}
+  .p1{background:radial-gradient(circle at 35% 30%,#ff9fb2,var(--red) 45%,var(--red2))}
+  .p2{background:radial-gradient(circle at 35% 30%,#fff0a8,var(--yel) 45%,var(--yel2))}
+  .pool{padding:6px 10px;border-radius:12px;background:rgba(255,210,63,.15);border:1px solid rgba(255,210,63,.4);font-size:12px;font-weight:800;text-align:center;line-height:1.2}
+  #status{font-size:18px;font-weight:800;text-align:center;min-height:30px;margin:6px 0 10px}
+  #board{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;padding:8px;border-radius:20px;overflow:hidden;touch-action:manipulation;
+    background:linear-gradient(160deg,#2563eb,#1e3a9f);box-shadow:0 14px 30px rgba(0,0,0,.45),inset 0 2px 6px rgba(255,255,255,.3)}
+  .col{display:flex;flex-direction:column;gap:6px;border-radius:14px;padding:0;cursor:default}
+  .col.can{cursor:pointer}
+  @media (hover:hover){.col.can:hover{background:rgba(255,255,255,.13)}.col.can:hover .ghost{opacity:.5}}
+  .cell{position:relative;aspect-ratio:1;border-radius:50%;background:#0a1030;box-shadow:inset 0 4px 8px rgba(0,0,0,.65)}
+  .disc,.ghost{position:absolute;inset:5%;border-radius:50%}
+  .disc{box-shadow:inset 0 -5px 7px rgba(0,0,0,.28),inset 0 4px 6px rgba(255,255,255,.3)}
+  .ghost{opacity:0;transition:opacity .12s}
+  .disc.drop{animation:drop calc(.28s + var(--d) * .045s) both}
+  @keyframes drop{0%{transform:translateY(calc(var(--d) * -112%));animation-timing-function:cubic-bezier(.5,0,1,.7)}
+    62%{transform:translateY(0);animation-timing-function:ease-out}75%{transform:translateY(-10%);animation-timing-function:ease-in}88%,100%{transform:translateY(0)}}
+  .cell.win .disc{animation:glow .7s ease-in-out infinite alternate;outline:3px solid #fff;outline-offset:-3px}
+  @keyframes glow{from{transform:scale(1);filter:brightness(1)}to{transform:scale(.86);filter:brightness(1.35)}}
+  .cell.hint::after{content:"";position:absolute;inset:14%;border-radius:50%;border:3px dashed #7ee787;animation:spin 3s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .ctr{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
   .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
-  .stat{background:#0f151d;border:1px solid var(--line);border-radius:8px;padding:6px;text-align:center}
-  .stat .l{font-size:10px;color:var(--mut)}.stat .v{font-size:15px;font-weight:700;font-family:ui-monospace,Menlo,Consolas,monospace}
-  .score{display:flex;justify-content:space-around;text-align:center}
-  .score b{display:block;font-size:20px}.score span{font-size:11px;color:var(--mut)}
-  .note{font-size:11px;color:var(--mut);margin-top:6px;line-height:1.5}
-  .dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px}
+  .stat{background:rgba(0,0,0,.25);border:1px solid var(--line);border-radius:10px;padding:6px 2px;text-align:center}
+  .stat .l{font-size:10px;color:var(--mut)} .stat .v{font-size:14px;font-weight:800;font-family:ui-monospace,Menlo,Consolas,monospace}
+  .note{font-size:12px;color:var(--mut);line-height:1.5}
+
+  /* friends */
+  .code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:44px;font-weight:900;letter-spacing:8px;text-align:center;margin:8px 0;
+    background:linear-gradient(90deg,var(--yel),var(--red));-webkit-background-clip:text;background-clip:text;color:transparent}
+  input.in{width:100%;padding:14px;border-radius:12px;border:1px solid var(--line);background:rgba(0,0,0,.3);color:var(--ink);
+    font-size:26px;font-weight:800;letter-spacing:6px;text-align:center;text-transform:uppercase;font-family:ui-monospace,Menlo,Consolas,monospace}
+  .spin{width:22px;height:22px;border-radius:50%;border:3px solid rgba(255,255,255,.25);border-top-color:var(--yel);animation:spin .9s linear infinite;display:inline-block;vertical-align:middle;margin-right:8px}
+  .err{color:#ff8fa3;font-size:13px;font-weight:700;margin-top:8px;text-align:center}
+
+  /* modal + toast */
+  .modal{position:fixed;inset:0;z-index:50;background:rgba(5,3,20,.7);backdrop-filter:blur(4px);display:grid;place-items:center;padding:20px;animation:fade .25s}
+  @keyframes fade{from{opacity:0}to{opacity:1}}
+  .sheet{width:100%;max-width:360px;text-align:center;padding:22px 18px;border-radius:24px;background:linear-gradient(160deg,#2b1760,#14275c);
+    border:1px solid var(--line);box-shadow:0 20px 50px rgba(0,0,0,.6);animation:rise .35s cubic-bezier(.2,1.3,.4,1)}
+  @keyframes rise{from{transform:translateY(40px) scale(.9);opacity:0}to{transform:none;opacity:1}}
+  .sheet .em{font-size:56px} .sheet h2{font-size:26px;margin:6px 0}
+  .sheet .gain{font-size:30px;font-weight:900;color:var(--yel);margin:8px 0}
+  .sheet .gain.neg{color:#ff8fa3} .sheet p{color:var(--mut);font-size:14px;margin:4px 0}
+  #toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,40px);opacity:0;z-index:80;background:#0c0a22;border:1px solid var(--yel);
+    color:var(--ink);padding:11px 16px;border-radius:14px;font-weight:700;font-size:14px;max-width:90vw;text-align:center;transition:all .3s;pointer-events:none}
+  #toast.show{transform:translate(-50%,0);opacity:1}
+  @media (prefers-reduced-motion:reduce){*{animation-duration:.01s!important;animation-iteration-count:1!important}}
 </style>
 </head>
 <body>
-<h1>Connect 4 vs AI</h1>
-<div class="sub">Minimax search with alpha-beta pruning. You are <span class="dot" style="background:var(--red)"></span>red or <span class="dot" style="background:var(--yel)"></span>yellow depending on who starts.</div>
+<div id="bg"></div>
+<canvas id="confetti"></canvas>
 
-<div class="card">
-  <div id="status">Your turn</div>
-  <div id="board"></div>
-</div>
-
-<div class="card">
-  <div class="row">
-    <select id="level">
-      <option value="2">Easy (depth 2)</option>
-      <option value="4" selected>Medium (depth 4)</option>
-      <option value="6">Hard (depth 6)</option>
-      <option value="8">Expert (depth 8)</option>
-    </select>
-    <button id="who">You start</button>
-    <button id="hint">Hint</button>
-    <button id="new" class="main">New game</button>
-    <button id="musicBtn">🔇 Music: Off</button>
+<div id="app">
+  <div class="top">
+    <button class="ib hidden" id="btnBack" aria-label="Back">‹</button>
+    <div class="sp"></div>
+    <div class="coins" id="coinChip">🪙 <span id="coinN">0</span></div>
+    <button class="ib" id="btnMusic" aria-label="Music">🎵</button>
+    <button class="ib" id="btnSfx" aria-label="Sound effects">🔊</button>
   </div>
+
+  <!-- MENU -->
+  <section id="scrMenu">
+    <div class="logo"><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b></div>
+    <h1>Connect 4</h1>
+    <div class="tag">Win matches, earn coins, unlock tougher AI levels.</div>
+    <button class="big a" id="goAI"><span class="em">🤖</span><span>Play with Computer<small>5 levels · hints · undo</small></span></button>
+    <button class="big b" id="goFriends"><span class="em">👥</span><span>Play with Friends<small>Create a room or join with an ID · 50 🪙 each</small></span></button>
+    <div class="glass note" id="menuInfo"></div>
+  </section>
+
+  <!-- LEVELS -->
+  <section id="scrLevels" class="hidden">
+    <div class="glass">
+      <h2>Choose your level</h2>
+      <div class="note" style="margin-bottom:10px">Easy is open to everyone. Beat each level 3 times to unlock the next one. Grandmaster needs 7 wins on Expert.</div>
+      <div class="seg" id="firstSeg"><button data-f="1">I go first</button><button data-f="0">AI goes first</button></div>
+    </div>
+    <div id="levelList"></div>
+  </section>
+
+  <!-- FRIENDS -->
+  <section id="scrFriends" class="hidden">
+    <div class="glass" id="fChoose">
+      <h2>Play with friends</h2>
+      <div class="note" style="margin-bottom:12px">Each player puts <b>50 🪙</b> into the prize pool. The winner gets <b>100 🪙</b> for winning plus the <b>100 🪙</b> pool. A draw refunds both stakes.</div>
+      <button class="btn gold" style="width:100%;margin-bottom:10px;padding:16px;font-size:17px" id="btnCreate">➕ Create Room</button>
+      <button class="btn" style="width:100%;padding:16px;font-size:17px" id="btnJoinGo">🔑 Join through ID</button>
+      <div class="err" id="fErr"></div>
+    </div>
+    <div class="glass hidden" id="fHost">
+      <h2>Your room ID</h2>
+      <div class="code" id="roomCode">·····</div>
+      <div class="row c" style="margin-bottom:10px"><button class="btn alt" id="btnCopy">📋 Copy</button><button class="btn alt" id="btnShare">📤 Share</button></div>
+      <div class="note" style="text-align:center"><span class="spin"></span><span id="hostMsg">Waiting for your friend to join…</span></div>
+      <div class="row c" style="margin-top:12px"><button class="btn alt" id="btnHostCancel">Cancel</button></div>
+    </div>
+    <div class="glass hidden" id="fJoin">
+      <h2>Enter room ID</h2>
+      <input class="in" id="joinInput" maxlength="5" placeholder="ABC12" autocomplete="off" autocapitalize="characters" spellcheck="false">
+      <div class="row c" style="margin-top:12px"><button class="btn" id="btnJoin">Join game</button><button class="btn alt" id="btnJoinCancel">Cancel</button></div>
+      <div class="note" style="text-align:center;margin-top:10px" id="joinMsg"></div>
+    </div>
+  </section>
+
+  <!-- GAME -->
+  <section id="scrGame" class="hidden">
+    <div class="strip">
+      <div class="pl" id="plYou"><span class="dotc" id="dotYou"></span><span class="n" id="nmYou">You</span></div>
+      <div class="pl" id="plOpp"><span class="dotc" id="dotOpp"></span><span class="n" id="nmOpp">AI</span></div>
+      <div class="pool hidden" id="poolChip">Prize<br>🪙 100</div>
+    </div>
+    <div id="status">Your turn</div>
+    <div id="board"></div>
+    <div class="ctr aionly">
+      <button class="btn alt" id="btnUndo">↩ Undo (4)</button>
+      <button class="btn alt" id="btnHint">💡 Hint (4)</button>
+      <button class="btn" id="btnNew">🔄 New</button>
+    </div>
+    <div class="glass aionly" style="margin-top:12px">
+      <div class="stats">
+        <div class="stat"><div class="l">Depth</div><div class="v" id="sDepth">-</div></div>
+        <div class="stat"><div class="l">Positions</div><div class="v" id="sNodes">-</div></div>
+        <div class="stat"><div class="l">Time</div><div class="v" id="sTime">-</div></div>
+        <div class="stat"><div class="l">Pos/sec</div><div class="v" id="sRate">-</div></div>
+      </div>
+      <div class="note" style="margin-top:8px">The AI searches the game tree with minimax and alpha-beta pruning. Higher levels look more moves ahead.</div>
+    </div>
+  </section>
 </div>
 
-<audio id="bgm" src="Bgm.mp3" loop></audio>
+<div class="modal hidden" id="modal"><div class="sheet">
+  <div class="em" id="mEmoji"></div><h2 id="mTitle"></h2>
+  <div class="gain" id="mGain"></div><p id="mBody"></p><p id="mExtra" style="color:var(--yel);font-weight:700"></p>
+  <div class="row c" id="mBtns" style="margin-top:14px"></div>
+</div></div>
+<div id="toast"></div>
 
-<div class="card">
-  <div class="stats">
-    <div class="stat"><div class="l">AI depth</div><div class="v" id="sDepth">-</div></div>
-    <div class="stat"><div class="l">Positions</div><div class="v" id="sNodes">-</div></div>
-    <div class="stat"><div class="l">Time</div><div class="v" id="sTime">-</div></div>
-    <div class="stat"><div class="l">Pos/sec</div><div class="v" id="sRate">-</div></div>
-  </div>
-  <div class="note">After each AI move you can see how many positions it searched. Alpha-beta pruning skips branches that cannot change the result, so the AI looks far ahead without checking every position.</div>
-</div>
-
-<div class="card score">
-  <div><b id="wHuman">0</b><span>You</span></div>
-  <div><b id="wDraw">0</b><span>Draws</span></div>
-  <div><b id="wAI">0</b><span>AI</span></div>
-</div>
-
-<script>
-'use strict';
-// ==== AI START ====
-const COLS = 7, ROWS = 6, WIN = 100000, INF = 1000000000;
-const ORDER = [3, 2, 4, 1, 5, 0, 6];
-const SC_ME = [0, 0, 3, 12, 0];
-const SC_OPP = [0, 0, 3, 14, 0];
-const WINDOWS = [];
-const WINS_FOR = Array.from({ length: 42 }, () => []);
+<!-- ============ AI (runs in a Web Worker; also tested against the C++ engine) ============ -->
+<script id="ai-src" type="javascript/worker">
+// Cell index = column * 6 + row (row 0 is the bottom). Pieces: 0 empty, 1 first player, 2 second player.
+var COLS = 7, ROWS = 6, WIN = 100000, INF = 1000000000;
+var ORDER = [3, 2, 4, 1, 5, 0, 6];           // centre columns first = better pruning
+var SC_ME = [0, 0, 3, 12, 0];                // my pieces in an open window of 4
+var SC_OPP = [0, 0, 3, 14, 0];               // opponent pieces in an open window
+var WINDOWS = [];                            // all 69 possible four-in-a-row lines
+var WINS_FOR = [];                           // windows that contain each cell
 (function () {
-  const dirs = [[1, 0], [0, 1], [1, 1], [1, -1]];
-  for (let c = 0; c < COLS; c++) for (let r = 0; r < ROWS; r++) for (const [dc, dr] of dirs) {
-    const ec = c + 3 * dc, er = r + 3 * dr;
+  for (var i = 0; i < 42; i++) WINS_FOR.push([]);
+  var dirs = [[1, 0], [0, 1], [1, 1], [1, -1]];
+  for (var c = 0; c < COLS; c++) for (var r = 0; r < ROWS; r++) for (var d = 0; d < 4; d++) {
+    var dc = dirs[d][0], dr = dirs[d][1], ec = c + 3 * dc, er = r + 3 * dr;
     if (ec < 0 || ec >= COLS || er < 0 || er >= ROWS) continue;
-    const w = [];
-    for (let k = 0; k < 4; k++) w.push((c + k * dc) * 6 + (r + k * dr));
+    var w = [];
+    for (var k = 0; k < 4; k++) w.push((c + k * dc) * 6 + (r + k * dr));
     WINDOWS.push(w);
-    for (const i of w) WINS_FOR[i].push(WINDOWS.length - 1);
+    for (var j = 0; j < 4; j++) WINS_FOR[w[j]].push(WINDOWS.length - 1);
   }
 })();
+var now = (typeof performance !== 'undefined' && performance.now) ? function () { return performance.now(); } : Date.now;
+var nodes = 0, deadline = Infinity, aborted = false;
 
+// Would player p complete four in a row by playing on `cell`?
 function isWinningMove(b, cell, p) {
-  const ids = WINS_FOR[cell];
-  for (let n = 0; n < ids.length; n++) {
-    const w = WINDOWS[ids[n]];
-    let ok = true;
-    for (let k = 0; k < 4; k++) { const i = w[k]; if (i !== cell && b[i] !== p) { ok = false; break; } }
+  var ids = WINS_FOR[cell];
+  for (var n = 0; n < ids.length; n++) {
+    var w = WINDOWS[ids[n]], ok = true;
+    for (var k = 0; k < 4; k++) { var i = w[k]; if (i !== cell && b[i] !== p) { ok = false; break; } }
     if (ok) return true;
   }
   return false;
 }
-
+// Heuristic score from the point of view of player `me`.
 function evaluate(b, me) {
-  const opp = 3 - me;
-  let s = 0;
-  for (let n = 0; n < WINDOWS.length; n++) {
-    const w = WINDOWS[n];
-    let m = 0, o = 0;
-    for (let k = 0; k < 4; k++) { const v = b[w[k]]; if (v === me) m++; else if (v === opp) o++; }
+  var opp = 3 - me, s = 0;
+  for (var n = 0; n < WINDOWS.length; n++) {
+    var w = WINDOWS[n], m = 0, o = 0;
+    for (var k = 0; k < 4; k++) { var v = b[w[k]]; if (v === me) m++; else if (v === opp) o++; }
     if (o === 0) s += SC_ME[m]; else if (m === 0) s -= SC_OPP[o];
   }
-  for (let r = 0; r < ROWS; r++) { const v = b[18 + r]; if (v === me) s += 3; else if (v === opp) s -= 3; }
+  for (var r = 0; r < ROWS; r++) { var v2 = b[18 + r]; if (v2 === me) s += 3; else if (v2 === opp) s -= 3; }
   return s;
 }
-
-let nodes = 0;
+// Negamax with alpha-beta pruning. Returns the score for the player to move.
 function negamax(b, h, moves, depth, alpha, beta, me) {
   nodes++;
+  if ((nodes & 4095) === 0 && now() > deadline) aborted = true;
+  if (aborted) return 0;
   if (moves === 42) return 0;
-  for (let i = 0; i < 7; i++) {
-    const c = ORDER[i];
+  var i, c;
+  for (i = 0; i < 7; i++) {                  // can I win right now?
+    c = ORDER[i];
     if (h[c] < 6 && isWinningMove(b, c * 6 + h[c], me)) return WIN - moves;
   }
   if (depth === 0) return evaluate(b, me);
-  let best = -INF;
-  for (let i = 0; i < 7; i++) {
-    const c = ORDER[i];
+  var best = -INF;
+  for (i = 0; i < 7; i++) {
+    c = ORDER[i];
     if (h[c] >= 6) continue;
-    const cell = c * 6 + h[c];
+    var cell = c * 6 + h[c];
     b[cell] = me; h[c]++;
-    const v = -negamax(b, h, moves + 1, depth - 1, -beta, -alpha, 3 - me);
+    var v = -negamax(b, h, moves + 1, depth - 1, -beta, -alpha, 3 - me);
     h[c]--; b[cell] = 0;
+    if (aborted) return 0;
     if (v > best) best = v;
     if (v > alpha) alpha = v;
-    if (alpha >= beta) break;
+    if (alpha >= beta) break;                // prune
   }
   return best;
 }
-
-function bestMove(b, h, moves, depth, me) {
-  nodes = 0;
-  const t0 = performance.now();
-  for (let i = 0; i < 7; i++) {
-    const c = ORDER[i];
-    if (h[c] < 6 && isWinningMove(b, c * 6 + h[c], me))
-      return { col: c, score: WIN - moves, nodes: 1, ms: performance.now() - t0 };
-  }
-  let alpha = -INF, bestC = -1;
-  for (let i = 0; i < 7; i++) {
-    const c = ORDER[i];
-    if (h[c] >= 6) continue;
-    const cell = c * 6 + h[c];
-    b[cell] = me; h[c]++;
-    const v = -negamax(b, h, moves + 1, depth - 1, -INF, -alpha, 3 - me);
-    h[c]--; b[cell] = 0;
-    if (bestC < 0 || v > alpha) { alpha = v; bestC = c; }
-  }
-  return { col: bestC, score: alpha, nodes, ms: performance.now() - t0 };
-}
-// ==== AI END ====
-
-// ---------- Game UI ----------
-const $ = id => document.getElementById(id);
-let board, heights, moves, human, over, busy, lastCell, winCells, hintCol;
-let youStart = true;
-let score = { human: 0, draw: 0, ai: 0 };
-try { const s = JSON.parse(localStorage.getItem('c4score')); if (s) score = s; } catch (e) {}
-
-// ---------- Background Music ----------
-const bgm = $('bgm');
-bgm.volume = 0.3;
-let musicPlaying = false;
-
-$('musicBtn').onclick = () => {
-  if (musicPlaying) {
-    bgm.pause();
-    $('musicBtn').textContent = '🔇 Music: Off';
-  } else {
-    bgm.play();
-    $('musicBtn').textContent = '🔊 Music: On';
-  }
-  musicPlaying = !musicPlaying;
-};
-
-function saveScore() { try { localStorage.setItem('c4score', JSON.stringify(score)); } catch (e) {} }
-function turnPlayer() { return 1 + (moves & 1); }
-
-function newGame() {
-  board = new Int8Array(42); heights = new Int8Array(7);
-  moves = 0; over = false; busy = false; lastCell = -1; winCells = []; hintCol = -1;
-  human = youStart ? 1 : 2;
-  $('who').textContent = youStart ? 'You start' : 'AI starts';
-  render();
-  if (!youStart) aiMove(); else setStatus('Your turn');
-}
-
-function setStatus(t) { $('status').textContent = t; }
-
-function render() {
-  const el = $('board');
-  let html = '';
-  for (let r = 5; r >= 0; r--) for (let c = 0; c < 7; c++) {
-    const cell = c * 6 + r, v = board[cell];
-    const cls = 'cell' + (winCells.includes(cell) ? ' win' : '');
-    let inner = '';
-    if (v) inner = `<div class="piece p${v}${cell === lastCell ? ' drop' : ''}" style="--d:${6 - r}"></div>`;
-    else if (c === hintCol && r === heights[c]) inner = '<div class="hintring"></div>';
-    html += `<div class="${cls}" data-col="${c}">${inner}</div>`;
-  }
-  el.innerHTML = html;
-}
-
-function place(col, p) {
-  const cell = col * 6 + heights[col];
-  board[cell] = p; heights[col]++; moves++; lastCell = cell; hintCol = -1;
-  for (const id of WINS_FOR[cell]) {
-    const w = WINDOWS[id];
-    if (w.every(i => board[i] === p)) { winCells = w.slice(); over = true; return 'win'; }
-  }
-  if (moves === 42) { over = true; return 'draw'; }
-  return 'ok';
-}
-
-function finish(result, p) {
-  render();
-  if (result === 'draw') { score.draw++; setStatus("It's a draw!"); }
-  else if (p === human) { score.human++; setStatus('You win! 🎉'); }
-  else { score.ai++; setStatus('AI wins. Try again!'); }
-  saveScore(); updateScore();
-}
-
-function updateScore() { $('wHuman').textContent = score.human; $('wDraw').textContent = score.draw; $('wAI').textContent = score.ai; }
-
-function aiMove() {
-  busy = true; setStatus('AI is thinking…');
-  const depth = +$('level').value;
-  setTimeout(() => {
-    const p = turnPlayer();
-    const r = bestMove(board, heights, moves, depth, p);
-    $('sDepth').textContent = depth;
-    $('sNodes').textContent = r.nodes.toLocaleString();
-    $('sTime').textContent = r.ms < 1000 ? r.ms.toFixed(0) + ' ms' : (r.ms / 1000).toFixed(1) + ' s';
-    $('sRate').textContent = r.ms > 0 ? Math.round(r.nodes / r.ms * 1000).toLocaleString() : '-';
-    const res = place(r.col, p);
-    busy = false;
-    if (res !== 'ok') return finish(res, p);
-    render(); setStatus('Your turn');
-  }, 40);
-}
-
-$('board').addEventListener('click', e => {
-  const cellEl = e.target.closest('.cell');
-  if (!cellEl || over || busy || turnPlayer() !== human) return;
-  const col = +cellEl.dataset.col;
-  if (heights[col] >= 6) return;
-  const res = place(col, human);
-  if (res !== 'ok') return finish(res, human);
-  render();
-  aiMove();
-});
-
-$('new').onclick = newGame;
-$('who').onclick = () => { youStart = !youStart; newGame(); };
-$('hint').onclick = () => {
-  if (over || busy || turnPlayer() !== human) return;
-  const r = bestMove(board, heights, moves, 6, human);
-  hintCol = r.col; render();
-  setStatus('Hint: try the dashed circle');
-};
-updateScore();
-newGame();
-</script>
-</body>
-</html>
+function rootSearch(b, h, moves, depth, me) {
+  var i, c;
+  for (i = 0; i < 7; i++) {
+    c = ORDER[i];
+    if (h[c] < 6 && isWinningMove(b, c * 6 + h[c], me)) { nodes = 1; return { col:
