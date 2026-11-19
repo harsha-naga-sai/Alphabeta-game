@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#140a33">
-<title>Connect 4 - Coins &amp; AI</title>
+<title>Four in a Row - AI &amp; Multiplayer</title>
 <style>
   :root{
     --red:#ff4d6d; --red2:#c9184a; --yel:#ffd23f; --yel2:#f4a300;
@@ -17,8 +17,9 @@
     background:linear-gradient(135deg,#140a33,#0b1d52,#2a0f4a,#0a2a5e);background-size:400% 400%;animation:bgmove 22s ease infinite;overflow-x:hidden}
   @keyframes bgmove{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
   .hidden{display:none!important}
+  svg.ico{width:1.25em;height:1.25em;vertical-align:-0.25em;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+  svg.ico.fill{fill:currentColor;stroke:none}
 
-  /* floating discs in the background */
   #bg{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:0}
   #bg i{position:absolute;bottom:-80px;border-radius:50%;opacity:.22;animation:floatup linear infinite;
     box-shadow:inset 0 -6px 10px rgba(0,0,0,.3),inset 0 4px 8px rgba(255,255,255,.35)}
@@ -33,7 +34,8 @@
     backdrop-filter:blur(8px);cursor:pointer;display:grid;place-items:center;transition:transform .12s}
   .ib:active{transform:scale(.92)} .ib.off{opacity:.45}
   .coins{display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:999px;font-weight:800;font-size:16px;
-    background:linear-gradient(135deg,rgba(255,210,63,.25),rgba(244,163,0,.18));border:1px solid rgba(255,210,63,.5);position:relative}
+    background:linear-gradient(135deg,rgba(255,210,63,.25),rgba(244,163,0,.18));border:1px solid rgba(255,210,63,.5);position:relative;color:var(--yel)}
+  .coins span{color:var(--ink)}
   .coins.bump{animation:bump .45s}
   @keyframes bump{30%{transform:scale(1.18)}100%{transform:scale(1)}}
   .float{position:absolute;right:8px;top:100%;font-weight:900;color:var(--yel);pointer-events:none;animation:flt 1.2s ease-out forwards;text-shadow:0 2px 6px #000}
@@ -41,7 +43,7 @@
 
   .glass{background:var(--glass);border:1px solid var(--line);border-radius:18px;padding:14px;backdrop-filter:blur(12px);
     box-shadow:0 10px 30px rgba(0,0,0,.28);margin-bottom:12px}
-  h1{margin:6px 0 2px;font-size:34px;letter-spacing:.5px;text-align:center;
+  h1{margin:6px 0 2px;font-size:32px;letter-spacing:.5px;text-align:center;
     background:linear-gradient(90deg,var(--red),var(--yel));-webkit-background-clip:text;background-clip:text;color:transparent}
   h2{margin:0 0 8px;font-size:18px}
   .tag{text-align:center;color:var(--mut);font-size:13px;margin-bottom:14px}
@@ -51,16 +53,19 @@
   .logo b:nth-child(3n){animation-delay:.3s}.logo b:nth-child(4n){animation-delay:.6s}.logo b:nth-child(5n){animation-delay:.9s}
   @keyframes pop{0%,100%{transform:scale(1)}50%{transform:scale(.8)}}
 
-  .big{display:flex;align-items:center;gap:14px;width:100%;text-align:left;border:0;border-radius:18px;padding:18px 16px;margin-bottom:12px;color:#fff;cursor:pointer;
+  .big{display:flex;align-items:center;gap:14px;width:100%;text-align:left;border:0;border-radius:18px;padding:16px;margin-bottom:12px;color:#fff;cursor:pointer;
     font-size:18px;font-weight:800;box-shadow:0 10px 24px rgba(0,0,0,.35);transition:transform .15s, filter .15s;position:relative;overflow:hidden}
   .big:hover{transform:translateY(-3px);filter:brightness(1.08)} .big:active{transform:scale(.98)}
   .big small{display:block;font-weight:500;font-size:12.5px;opacity:.9;margin-top:2px}
-  .big .em{font-size:34px}
-  .big.a{background:linear-gradient(135deg,#7c3aed,#3b82f6)} .big.b{background:linear-gradient(135deg,#f43f5e,#f59e0b)}
+  .big .em{width:46px;height:46px;border-radius:14px;background:rgba(255,255,255,.16);display:grid;place-items:center;flex:none}
+  .big .em svg{width:26px;height:26px}
+  .big.a{background:linear-gradient(135deg,#7c3aed,#3b82f6)}
+  .big.b{background:linear-gradient(135deg,#f43f5e,#f59e0b)}
+  .big.c{background:linear-gradient(135deg,#059669,#0284c7)}
   .big::after{content:"";position:absolute;inset:0;background:linear-gradient(120deg,transparent 30%,rgba(255,255,255,.25) 50%,transparent 70%);transform:translateX(-120%);animation:shine 4s infinite}
   @keyframes shine{to{transform:translateX(120%)}}
 
-  button.btn{border:0;border-radius:12px;padding:12px 14px;font-size:15px;font-weight:700;color:#fff;cursor:pointer;
+  button.btn{border:0;border-radius:12px;padding:12px 14px;font-size:15px;font-weight:700;color:#fff;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;
     background:linear-gradient(135deg,var(--acc1),var(--acc2));box-shadow:0 6px 14px rgba(0,0,0,.3);transition:transform .12s,opacity .12s}
   button.btn:active{transform:scale(.95)} button.btn.alt{background:rgba(255,255,255,.14);box-shadow:none;border:1px solid var(--line)}
   button.btn.gold{background:linear-gradient(135deg,var(--yel),var(--yel2));color:#3b2a00}
@@ -68,14 +73,15 @@
   .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
   .row.c{justify-content:center}.row>.grow{flex:1}
 
-  /* levels */
   .lvl{display:flex;align-items:center;gap:12px;padding:12px;border-radius:16px;margin-bottom:10px;border:1px solid var(--line);
     background:var(--glass);cursor:pointer;transition:transform .12s,border-color .12s}
   .lvl:hover{transform:translateX(4px);border-color:var(--acc1)}
-  .lvl .ic{font-size:28px;width:46px;height:46px;border-radius:14px;display:grid;place-items:center;background:rgba(255,255,255,.1)}
+  .lvl .ic{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;background:rgba(255,255,255,.1);color:var(--yel)}
+  .lvl .ic svg{width:24px;height:24px}
   .lvl .tx{flex:1;min-width:0} .lvl .nm{font-weight:800} .lvl .ds{font-size:12px;color:var(--mut);margin-top:2px}
   .lvl .rt{font-size:12px;color:var(--yel);font-weight:700;text-align:right}
   .lvl.locked{opacity:.6;cursor:not-allowed} .lvl.locked:hover{transform:none;border-color:var(--line)}
+  .lvl.locked .ic{color:var(--mut)}
   .bar{height:6px;border-radius:99px;background:rgba(255,255,255,.12);margin-top:6px;overflow:hidden}
   .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--ok),var(--yel));border-radius:99px;transition:width .5s}
   .shake{animation:shake .35s}
@@ -84,7 +90,6 @@
   .seg button{flex:1;border:0;background:transparent;color:var(--ink);padding:9px;border-radius:10px;font-weight:700;cursor:pointer}
   .seg button.on{background:linear-gradient(135deg,var(--acc1),var(--acc2))}
 
-  /* game */
   .strip{display:flex;align-items:center;gap:8px;margin-bottom:8px}
   .pl{flex:1;display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:14px;background:var(--glass);border:1px solid var(--line);font-weight:700;font-size:14px;transition:all .2s;min-width:0}
   .pl span.n{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -92,8 +97,8 @@
   .dotc{width:18px;height:18px;border-radius:50%;flex:none}
   .p1{background:radial-gradient(circle at 35% 30%,#ff9fb2,var(--red) 45%,var(--red2))}
   .p2{background:radial-gradient(circle at 35% 30%,#fff0a8,var(--yel) 45%,var(--yel2))}
-  .pool{padding:6px 10px;border-radius:12px;background:rgba(255,210,63,.15);border:1px solid rgba(255,210,63,.4);font-size:12px;font-weight:800;text-align:center;line-height:1.2}
-  #status{font-size:18px;font-weight:800;text-align:center;min-height:30px;margin:6px 0 10px}
+  .pool{padding:6px 10px;border-radius:12px;background:rgba(255,210,63,.15);border:1px solid rgba(255,210,63,.4);font-size:12px;font-weight:800;text-align:center;line-height:1.2;color:var(--yel)}
+  #status{font-size:18px;font-weight:800;text-align:center;min-height:30px;margin:6px 0 10px;display:flex;align-items:center;justify-content:center;gap:8px}
   #board{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;padding:8px;border-radius:20px;overflow:hidden;touch-action:manipulation;
     background:linear-gradient(160deg,#2563eb,#1e3a9f);box-shadow:0 14px 30px rgba(0,0,0,.45),inset 0 2px 6px rgba(255,255,255,.3)}
   .col{display:flex;flex-direction:column;gap:6px;border-radius:14px;padding:0;cursor:default}
@@ -114,23 +119,23 @@
   .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
   .stat{background:rgba(0,0,0,.25);border:1px solid var(--line);border-radius:10px;padding:6px 2px;text-align:center}
   .stat .l{font-size:10px;color:var(--mut)} .stat .v{font-size:14px;font-weight:800;font-family:ui-monospace,Menlo,Consolas,monospace}
-  .note{font-size:12px;color:var(--mut);line-height:1.5}
+  .note{font-size:12px;color:var(--mut);line-height:1.6}
 
-  /* friends */
   .code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:44px;font-weight:900;letter-spacing:8px;text-align:center;margin:8px 0;
     background:linear-gradient(90deg,var(--yel),var(--red));-webkit-background-clip:text;background-clip:text;color:transparent}
   input.in{width:100%;padding:14px;border-radius:12px;border:1px solid var(--line);background:rgba(0,0,0,.3);color:var(--ink);
     font-size:26px;font-weight:800;letter-spacing:6px;text-align:center;text-transform:uppercase;font-family:ui-monospace,Menlo,Consolas,monospace}
-  .spin{width:22px;height:22px;border-radius:50%;border:3px solid rgba(255,255,255,.25);border-top-color:var(--yel);animation:spin .9s linear infinite;display:inline-block;vertical-align:middle;margin-right:8px}
+  .spin{width:20px;height:20px;border-radius:50%;border:3px solid rgba(255,255,255,.25);border-top-color:var(--yel);animation:spin .9s linear infinite;display:inline-block;vertical-align:middle;margin-right:8px}
   .err{color:#ff8fa3;font-size:13px;font-weight:700;margin-top:8px;text-align:center}
 
-  /* modal + toast */
   .modal{position:fixed;inset:0;z-index:50;background:rgba(5,3,20,.7);backdrop-filter:blur(4px);display:grid;place-items:center;padding:20px;animation:fade .25s}
   @keyframes fade{from{opacity:0}to{opacity:1}}
   .sheet{width:100%;max-width:360px;text-align:center;padding:22px 18px;border-radius:24px;background:linear-gradient(160deg,#2b1760,#14275c);
     border:1px solid var(--line);box-shadow:0 20px 50px rgba(0,0,0,.6);animation:rise .35s cubic-bezier(.2,1.3,.4,1)}
   @keyframes rise{from{transform:translateY(40px) scale(.9);opacity:0}to{transform:none;opacity:1}}
-  .sheet .em{font-size:56px} .sheet h2{font-size:26px;margin:6px 0}
+  .sheet .em{width:68px;height:68px;margin:0 auto 6px;border-radius:50%;background:rgba(255,255,255,.1);display:grid;place-items:center;color:var(--yel)}
+  .sheet .em svg{width:38px;height:38px}
+  .sheet h2{font-size:26px;margin:6px 0}
   .sheet .gain{font-size:30px;font-weight:900;color:var(--yel);margin:8px 0}
   .sheet .gain.neg{color:#ff8fa3} .sheet p{color:var(--mut);font-size:14px;margin:4px 0}
   #toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,40px);opacity:0;z-index:80;background:#0c0a22;border:1px solid var(--yel);
@@ -140,33 +145,72 @@
 </style>
 </head>
 <body>
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none">
+  <symbol id="i-back" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></symbol>
+  <symbol id="i-coin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9.5 9.5h4a1.5 1.5 0 0 1 0 3h-3a1.5 1.5 0 0 0 0 3h4"/></symbol>
+  <symbol id="i-music" viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></symbol>
+  <symbol id="i-vol" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></symbol>
+  <symbol id="i-mute" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></symbol>
+  <symbol id="i-bot" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><line x1="8" y1="16" x2="8" y2="16"/><line x1="16" y1="16" x2="16" y2="16"/></symbol>
+  <symbol id="i-users" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+  <symbol id="i-local" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></symbol>
+  <symbol id="i-trophy" viewBox="0 0 24 24"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></symbol>
+  <symbol id="i-key" viewBox="0 0 24 24"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></symbol>
+  <symbol id="i-share" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></symbol>
+  <symbol id="i-undo" viewBox="0 0 24 24"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></symbol>
+  <symbol id="i-hint" viewBox="0 0 24 24"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.7.6 1 1.4 1 2.3h6c0-.9.3-1.7 1-2.3A7 7 0 0 0 12 2z"/></symbol>
+  <symbol id="i-new" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></symbol>
+  <symbol id="i-lvl1" viewBox="0 0 24 24"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></symbol>
+  <symbol id="i-lvl2" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></symbol>
+  <symbol id="i-lvl3" viewBox="0 0 24 24"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></symbol>
+  <symbol id="i-lvl4" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></symbol>
+  <symbol id="i-lvl5" viewBox="0 0 24 24"><path d="M2 4l3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"/></symbol>
+  <symbol id="i-draw" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="8" y1="15" x2="16" y2="15"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></symbol>
+  <symbol id="i-sad" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M16 16s-1.5-2-4-2-4 2-4 2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></symbol>
+</svg>
+
 <div id="bg"></div>
 <canvas id="confetti"></canvas>
 
 <div id="app">
   <div class="top">
-    <button class="ib hidden" id="btnBack" aria-label="Back">‹</button>
+    <button class="ib hidden" id="btnBack" aria-label="Back"><svg class="ico"><use href="#i-back"/></svg></button>
     <div class="sp"></div>
-    <div class="coins" id="coinChip">🪙 <span id="coinN">0</span></div>
-    <button class="ib" id="btnMusic" aria-label="Music">🎵</button>
-    <button class="ib" id="btnSfx" aria-label="Sound effects">🔊</button>
+    <div class="coins" id="coinChip"><svg class="ico"><use href="#i-coin"/></svg> <span id="coinN">0</span></div>
+    <button class="ib" id="btnMusic" aria-label="Music"><svg class="ico"><use href="#i-music"/></svg></button>
+    <button class="ib" id="btnSfx" aria-label="Sound effects"><svg class="ico"><use href="#i-vol"/></svg></button>
   </div>
 
   <!-- MENU -->
   <section id="scrMenu">
     <div class="logo"><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b></div>
-    <h1>Connect 4</h1>
+    <h1>Four in a Row</h1>
     <div class="tag">Win matches, earn coins, unlock tougher AI levels.</div>
-    <button class="big a" id="goAI"><span class="em">🤖</span><span>Play with Computer<small>5 levels · hints · undo</small></span></button>
-    <button class="big b" id="goFriends"><span class="em">👥</span><span>Play with Friends<small>Create a room or join with an ID · 50 🪙 each</small></span></button>
+    <button class="big a" id="goAI">
+      <span class="em"><svg class="ico"><use href="#i-bot"/></svg></span>
+      <span>Play vs Computer<small>5 AI levels · hints · undo</small></span>
+    </button>
+    <button class="big b" id="goFriends">
+      <span class="em"><svg class="ico"><use href="#i-users"/></svg></span>
+      <span>Play Online with Friends<small>Create a room or join with an ID · 50 coins each</small></span>
+    </button>
+    <button class="big c" id="goLocal">
+      <span class="em"><svg class="ico"><use href="#i-local"/></svg></span>
+      <span>Pass &amp; Play (2 Players)<small>Offline match on the same device</small></span>
+    </button>
     <div class="glass note" id="menuInfo"></div>
   </section>
 
   <!-- LEVELS -->
   <section id="scrLevels" class="hidden">
     <div class="glass">
-      <h2>Choose your level</h2>
-      <div class="note" style="margin-bottom:10px">Easy is open to everyone. Beat each level 3 times to unlock the next one. Grandmaster needs 7 wins on Expert.</div>
+      <h2>Choose Difficulty</h2>
+      <div class="note" style="margin-bottom:10px">Easy is unlocked by default. Beat each level 3 times to unlock the next tier (Grandmaster requires 7 wins on Expert).</div>
       <div class="seg" id="firstSeg"><button data-f="1">I go first</button><button data-f="0">AI goes first</button></div>
     </div>
     <div id="levelList"></div>
@@ -175,687 +219,17 @@
   <!-- FRIENDS -->
   <section id="scrFriends" class="hidden">
     <div class="glass" id="fChoose">
-      <h2>Play with friends</h2>
-      <div class="note" style="margin-bottom:12px">Each player puts <b>50 🪙</b> into the prize pool. The winner gets <b>100 🪙</b> for winning plus the <b>100 🪙</b> pool. A draw refunds both stakes.</div>
-      <button class="btn gold" style="width:100%;margin-bottom:10px;padding:16px;font-size:17px" id="btnCreate">➕ Create Room</button>
-      <button class="btn" style="width:100%;padding:16px;font-size:17px" id="btnJoinGo">🔑 Join through ID</button>
+      <h2>Online Multiplayer</h2>
+      <div class="note" style="margin-bottom:12px">Each player stakes <b>50 coins</b> into the prize pool. The winner earns <b>100 coins</b> plus the <b>100 coin</b> pool. A draw refunds both stakes.</div>
+      <button class="btn gold" style="width:100%;margin-bottom:10px;padding:16px;font-size:16px" id="btnCreate"><svg class="ico"><use href="#i-plus"/></svg> Create Room</button>
+      <button class="btn" style="width:100%;padding:16px;font-size:16px" id="btnJoinGo"><svg class="ico"><use href="#i-key"/></svg> Join with Room ID</button>
       <div class="err" id="fErr"></div>
     </div>
     <div class="glass hidden" id="fHost">
-      <h2>Your room ID</h2>
+      <h2>Your Room ID</h2>
       <div class="code" id="roomCode">·····</div>
-      <div class="row c" style="margin-bottom:10px"><button class="btn alt" id="btnCopy">📋 Copy</button><button class="btn alt" id="btnShare">📤 Share</button></div>
-      <div class="note" style="text-align:center"><span class="spin"></span><span id="hostMsg">Waiting for your friend to join…</span></div>
-      <div class="row c" style="margin-top:12px"><button class="btn alt" id="btnHostCancel">Cancel</button></div>
-    </div>
-    <div class="glass hidden" id="fJoin">
-      <h2>Enter room ID</h2>
-      <input class="in" id="joinInput" maxlength="5" placeholder="ABC12" autocomplete="off" autocapitalize="characters" spellcheck="false">
-      <div class="row c" style="margin-top:12px"><button class="btn" id="btnJoin">Join game</button><button class="btn alt" id="btnJoinCancel">Cancel</button></div>
-      <div class="note" style="text-align:center;margin-top:10px" id="joinMsg"></div>
-    </div>
-  </section>
-
-  <!-- GAME -->
-  <section id="scrGame" class="hidden">
-    <div class="strip">
-      <div class="pl" id="plYou"><span class="dotc" id="dotYou"></span><span class="n" id="nmYou">You</span></div>
-      <div class="pl" id="plOpp"><span class="dotc" id="dotOpp"></span><span class="n" id="nmOpp">AI</span></div>
-      <div class="pool hidden" id="poolChip">Prize<br>🪙 100</div>
-    </div>
-    <div id="status">Your turn</div>
-    <div id="board"></div>
-    <div class="ctr aionly">
-      <button class="btn alt" id="btnUndo">↩ Undo (4)</button>
-      <button class="btn alt" id="btnHint">💡 Hint (4)</button>
-      <button class="btn" id="btnNew">🔄 New</button>
-    </div>
-    <div class="glass aionly" style="margin-top:12px">
-      <div class="stats">
-        <div class="stat"><div class="l">Depth</div><div class="v" id="sDepth">-</div></div>
-        <div class="stat"><div class="l">Positions</div><div class="v" id="sNodes">-</div></div>
-        <div class="stat"><div class="l">Time</div><div class="v" id="sTime">-</div></div>
-        <div class="stat"><div class="l">Pos/sec</div><div class="v" id="sRate">-</div></div>
+      <div class="row c" style="margin-bottom:10px">
+        <button class="btn alt" id="btnCopy"><svg class="ico"><use href="#i-copy"/></svg> Copy</button>
+        <button class="btn alt" id="btnShare"><svg class="ico"><use href="#i-share"/></svg> Share</button>
       </div>
-      <div class="note" style="margin-top:8px">The AI searches the game tree with minimax and alpha-beta pruning. Higher levels look more moves ahead.</div>
-    </div>
-  </section>
-</div>
-
-<div class="modal hidden" id="modal"><div class="sheet">
-  <div class="em" id="mEmoji"></div><h2 id="mTitle"></h2>
-  <div class="gain" id="mGain"></div><p id="mBody"></p><p id="mExtra" style="color:var(--yel);font-weight:700"></p>
-  <div class="row c" id="mBtns" style="margin-top:14px"></div>
-</div></div>
-<div id="toast"></div>
-
-<!-- ============ AI (runs in a Web Worker; also tested against the C++ engine) ============ -->
-<script id="ai-src" type="javascript/worker">
-// Cell index = column * 6 + row (row 0 is the bottom). Pieces: 0 empty, 1 first player, 2 second player.
-var COLS = 7, ROWS = 6, WIN = 100000, INF = 1000000000;
-var ORDER = [3, 2, 4, 1, 5, 0, 6];           // centre columns first = better pruning
-var SC_ME = [0, 0, 3, 12, 0];                // my pieces in an open window of 4
-var SC_OPP = [0, 0, 3, 14, 0];               // opponent pieces in an open window
-var WINDOWS = [];                            // all 69 possible four-in-a-row lines
-var WINS_FOR = [];                           // windows that contain each cell
-(function () {
-  for (var i = 0; i < 42; i++) WINS_FOR.push([]);
-  var dirs = [[1, 0], [0, 1], [1, 1], [1, -1]];
-  for (var c = 0; c < COLS; c++) for (var r = 0; r < ROWS; r++) for (var d = 0; d < 4; d++) {
-    var dc = dirs[d][0], dr = dirs[d][1], ec = c + 3 * dc, er = r + 3 * dr;
-    if (ec < 0 || ec >= COLS || er < 0 || er >= ROWS) continue;
-    var w = [];
-    for (var k = 0; k < 4; k++) w.push((c + k * dc) * 6 + (r + k * dr));
-    WINDOWS.push(w);
-    for (var j = 0; j < 4; j++) WINS_FOR[w[j]].push(WINDOWS.length - 1);
-  }
-})();
-var now = (typeof performance !== 'undefined' && performance.now) ? function () { return performance.now(); } : Date.now;
-var nodes = 0, deadline = Infinity, aborted = false;
-
-// Would player p complete four in a row by playing on `cell`?
-function isWinningMove(b, cell, p) {
-  var ids = WINS_FOR[cell];
-  for (var n = 0; n < ids.length; n++) {
-    var w = WINDOWS[ids[n]], ok = true;
-    for (var k = 0; k < 4; k++) { var i = w[k]; if (i !== cell && b[i] !== p) { ok = false; break; } }
-    if (ok) return true;
-  }
-  return false;
-}
-// Heuristic score from the point of view of player `me`.
-function evaluate(b, me) {
-  var opp = 3 - me, s = 0;
-  for (var n = 0; n < WINDOWS.length; n++) {
-    var w = WINDOWS[n], m = 0, o = 0;
-    for (var k = 0; k < 4; k++) { var v = b[w[k]]; if (v === me) m++; else if (v === opp) o++; }
-    if (o === 0) s += SC_ME[m]; else if (m === 0) s -= SC_OPP[o];
-  }
-  for (var r = 0; r < ROWS; r++) { var v2 = b[18 + r]; if (v2 === me) s += 3; else if (v2 === opp) s -= 3; }
-  return s;
-}
-// Negamax with alpha-beta pruning. Returns the score for the player to move.
-function negamax(b, h, moves, depth, alpha, beta, me) {
-  nodes++;
-  if ((nodes & 4095) === 0 && now() > deadline) aborted = true;
-  if (aborted) return 0;
-  if (moves === 42) return 0;
-  var i, c;
-  for (i = 0; i < 7; i++) {                  // can I win right now?
-    c = ORDER[i];
-    if (h[c] < 6 && isWinningMove(b, c * 6 + h[c], me)) return WIN - moves;
-  }
-  if (depth === 0) return evaluate(b, me);
-  var best = -INF;
-  for (i = 0; i < 7; i++) {
-    c = ORDER[i];
-    if (h[c] >= 6) continue;
-    var cell = c * 6 + h[c];
-    b[cell] = me; h[c]++;
-    var v = -negamax(b, h, moves + 1, depth - 1, -beta, -alpha, 3 - me);
-    h[c]--; b[cell] = 0;
-    if (aborted) return 0;
-    if (v > best) best = v;
-    if (v > alpha) alpha = v;
-    if (alpha >= beta) break;                // prune
-  }
-  return best;
-}
-function rootSearch(b, h, moves, depth, me) {
-  var i, c;
-  for (i = 0; i < 7; i++) {
-    c = ORDER[i];
-    if (h[c] < 6 && isWinningMove(b, c * 6 + h[c], me)) { nodes = 1; return { col: c, score: WIN - moves }; }
-  }
-  var alpha = -INF, bestC = -1;
-  for (i = 0; i < 7; i++) {
-    c = ORDER[i];
-    if (h[c] >= 6) continue;
-    var cell = c * 6 + h[c];
-    b[cell] = me; h[c]++;
-    var v = -negamax(b, h, moves + 1, depth - 1, -INF, -alpha, 3 - me);
-    h[c]--; b[cell] = 0;
-    if (aborted) return { col: bestC, score: alpha };
-    if (bestC < 0 || v > alpha) { alpha = v; bestC = c; }
-  }
-  return { col: bestC, score: alpha };
-}
-// ms = 0: search exactly `maxDepth` plies. ms > 0: iterative deepening up to `maxDepth`, stopping when time runs out.
-function solve(b0, h0, moves, me, maxDepth, ms) {
-  var b = Int8Array.from(b0), h = Int8Array.from(h0);
-  var t0 = now(); nodes = 0; aborted = false; deadline = ms > 0 ? t0 + ms : Infinity;
-  var best = null;
-  for (var d = ms > 0 ? 1 : maxDepth; d <= maxDepth; d++) {
-    var r = rootSearch(b, h, moves, d, me);
-    if (aborted && best) break;
-    best = { col: r.col, score: r.score, depth: d };
-    if (Math.abs(r.score) >= WIN - 100) break;
-  }
-  best.nodes = nodes; best.ms = now() - t0;
-  return best;
-}
-</script>
-
-<script>
-'use strict';
-const $ = id => document.getElementById(id);
-const sleep = ms => new Promise(r => setTimeout(r, ms));
-
-// ================= CONFIG (edit these) =================
-const BGM_FILES = ['Bgm.mp3'];        // put your music file(s) in the same folder as index.html and list them here
-const STAKE = 50, WIN_COINS = 100, POOL = STAKE * 2, BONUS = 500, MAX_HINTS = 4, MAX_UNDOS = 4;
-const LEVELS = [
-  { id: 'easy',        name: 'Easy',        icon: '🌱', depth: 2,  ms: 0,    rand: 0.25, desc: 'Looks 2 moves ahead, sometimes slips' },
-  { id: 'medium',      name: 'Medium',      icon: '⚡', depth: 4,  ms: 0,    rand: 0,    desc: 'Looks 4 moves ahead' },
-  { id: 'hard',        name: 'Hard',        icon: '🔥', depth: 6,  ms: 1500, rand: 0,    desc: 'Looks up to 6 moves ahead' },
-  { id: 'expert',      name: 'Expert',      icon: '💎', depth: 9,  ms: 2500, rand: 0,    desc: 'Looks up to 9 moves ahead' },
-  { id: 'grandmaster', name: 'Grandmaster', icon: '👑', depth: 14, ms: 3500, rand: 0,    desc: 'Searches up to 14 moves ahead' }
-];
-const UNLOCK_NEED = [0, 3, 3, 3, 7];   // wins needed on the previous level to unlock this one
-const PEER_SRC = 'https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js';
-const ROOM_PREFIX = 'connect4-hns-';
-const reduced = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-// ================= SAVE DATA =================
-let save = { coins: 0, first: true, wins: {}, music: true, sfx: true, youFirst: true };
-try {
-  const s = JSON.parse(localStorage.getItem('c4hns'));
-  if (s && typeof s === 'object') save = Object.assign(save, s);
-} catch (e) {}
-save.coins = Math.max(0, Math.floor(Number(save.coins) || 0));
-if (!save.wins || typeof save.wins !== 'object') save.wins = {};
-function persist() { try { localStorage.setItem('c4hns', JSON.stringify(save)); } catch (e) {} }
-
-// ================= SOUND =================
-let actx = null;
-function ac() {
-  if (!actx) { try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
-  if (actx && actx.state === 'suspended') actx.resume();
-  return actx;
-}
-function tone(f, dur, type, vol, when, slide) {
-  if (!save.sfx) return;
-  const a = ac(); if (!a) return;
-  const t = a.currentTime + (when || 0), o = a.createOscillator(), g = a.createGain();
-  o.type = type || 'sine'; o.frequency.setValueAtTime(f, t);
-  if (slide) o.frequency.exponentialRampToValueAtTime(slide, t + dur);
-  g.gain.setValueAtTime(vol || .12, t); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
-  o.connect(g); g.connect(a.destination); o.start(t); o.stop(t + dur + .03);
-}
-const sfx = {
-  drop() { tone(320, .13, 'triangle', .22, 0, 110); },
-  click() { tone(520, .05, 'square', .04); },
-  win() { [523, 659, 784, 1047].forEach((f, i) => tone(f, .24, 'triangle', .18, i * .12)); },
-  lose() { [392, 330, 262].forEach((f, i) => tone(f, .3, 'sawtooth', .07, i * .16)); },
-  coin() { tone(988, .08, 'square', .05); tone(1319, .2, 'square', .05, .08); },
-  err() { tone(160, .15, 'square', .07); }
-};
-let bgm = null, bgmIdx = 0;
-function initMusic() {
-  if (!BGM_FILES.length) { $('btnMusic').classList.add('hidden'); return; }
-  bgm = new Audio(BGM_FILES[0]); bgm.volume = .35; bgm.loop = BGM_FILES.length === 1;
-  bgm.addEventListener('ended', () => { bgmIdx = (bgmIdx + 1) % BGM_FILES.length; bgm.src = BGM_FILES[bgmIdx]; bgm.play().catch(() => {}); });
-  bgm.addEventListener('error', () => { $('btnMusic').classList.add('hidden'); bgm = null; });   // file missing: hide the button
-}
-function syncAudioButtons() {
-  $('btnMusic').classList.toggle('off', !save.music); $('btnMusic').textContent = save.music ? '🎵' : '🔇';
-  $('btnSfx').classList.toggle('off', !save.sfx);
-  if (bgm) { if (save.music) bgm.play().catch(() => {}); else bgm.pause(); }
-}
-
-// ================= SMALL UI HELPERS =================
-let toastT = null;
-function toast(msg) { const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 2600); }
-function renderCoins(bump) {
-  $('coinN').textContent = save.coins.toLocaleString();
-  if (bump && !reduced) { const c = $('coinChip'); c.classList.remove('bump'); void c.offsetWidth; c.classList.add('bump'); }
-}
-function floatText(n) {
-  const s = document.createElement('span'); s.className = 'float'; s.textContent = (n > 0 ? '+' : '') + n;
-  $('coinChip').appendChild(s); setTimeout(() => s.remove(), 1300);
-}
-function addCoins(n) { save.coins = Math.max(0, save.coins + n); persist(); renderCoins(true); if (n) floatText(n); }
-// First launch: 500 coins. Any time you have fewer than 50 coins: 500 coins bonus.
-function grantBonusIfNeeded() {
-  if (save.first) { save.first = false; save.coins += BONUS; persist(); toast('🎁 Welcome bonus: +500 coins!'); sfx.coin(); renderCoins(true); }
-  else if (save.coins < STAKE) { save.coins += BONUS; persist(); toast('🎁 Low on coins - bonus +500!'); sfx.coin(); renderCoins(true); }
-}
-function confetti() {
-  if (reduced) return;
-  const cv = $('confetti'), ctx = cv.getContext('2d'); cv.width = innerWidth; cv.height = innerHeight;
-  const cols = ['#ff4d6d', '#ffd23f', '#4dabf7', '#69db7c', '#da77f2'];
-  const P = Array.from({ length: 140 }, () => ({ x: Math.random() * cv.width, y: -20 - Math.random() * cv.height * .5, vx: (Math.random() - .5) * 3,
-    vy: 2 + Math.random() * 4, s: 5 + Math.random() * 7, c: cols[(Math.random() * 5) | 0], r: Math.random() * 6, vr: (Math.random() - .5) * .3 }));
-  const t0 = performance.now();
-  (function f(ts) {
-    ctx.clearRect(0, 0, cv.width, cv.height);
-    for (const p of P) { p.x += p.vx; p.y += p.vy; p.r += p.vr; ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.r); ctx.fillStyle = p.c; ctx.fillRect(-p.s / 2, -p.s / 2, p.s, p.s * .6); ctx.restore(); }
-    if (ts - t0 < 3200) requestAnimationFrame(f); else ctx.clearRect(0, 0, cv.width, cv.height);
-  })(t0);
-}
-(function bgDiscs() {
-  let h = '';
-  for (let i = 0; i < 14; i++) {
-    const s = 24 + Math.random() * 50;
-    h += `<i class="${i % 2 ? 'r' : 'y'}" style="width:${s}px;height:${s}px;left:${Math.random() * 100}%;animation-duration:${14 + Math.random() * 18}s;animation-delay:${-Math.random() * 25}s"></i>`;
-  }
-  $('bg').innerHTML = h;
-})();
-
-// ================= AI WRAPPER (Web Worker with main-thread fallback) =================
-const ai = (() => {
-  const src = $('ai-src').textContent;
-  let worker = null, seq = 0, fallback = null;
-  const pending = new Map();
-  function getFallback() { if (!fallback) fallback = new Function(src + '\nreturn solve;')(); return fallback; }
-  try {
-    const glue = '\nself.onmessage=function(e){var d=e.data;var r=solve(d.board,d.heights,d.moves,d.me,d.depth,d.ms);r.id=d.id;self.postMessage(r);};';
-    worker = new Worker(URL.createObjectURL(new Blob([src + glue], { type: 'text/javascript' })));
-    worker.onmessage = e => { const p = pending.get(e.data.id); if (p) { pending.delete(e.data.id); p.resolve(e.data); } };
-    worker.onerror = () => {
-      worker = null;
-      for (const [id, p] of pending) { pending.delete(id); const d = p.args; p.resolve(getFallback()(d.board, d.heights, d.moves, d.me, d.depth, d.ms)); }
-    };
-  } catch (e) { worker = null; }
-  return {
-    think(a) {
-      return new Promise(resolve => {
-        if (worker) { const id = ++seq; pending.set(id, { resolve, args: a }); worker.postMessage(Object.assign({ id }, a)); }
-        else setTimeout(() => resolve(getFallback()(a.board, a.heights, a.moves, a.me, a.depth, a.ms)), 20);
-      });
-    }
-  };
-})();
-
-// ================= GAME STATE =================
-const S = { mode: null, level: null, board: new Int8Array(42), heights: new Int8Array(7), hist: [], over: true, active: false, busy: false,
-  winCells: [], hintCol: -1, hints: MAX_HINTS, undos: MAX_UNDOS, hintBusy: false, myP: 1, animCell: -1, aiToken: 0 };
-const turn = () => 1 + (S.hist.length & 1);
-
-function resetBoard() {
-  S.board = new Int8Array(42); S.heights = new Int8Array(7); S.hist = []; S.over = false; S.busy = false;
-  S.winCells = []; S.hintCol = -1; S.animCell = -1; S.hintBusy = false; S.aiToken++;
-}
-// Place a stone for the player whose turn it is. Returns {state:'ok'|'win'|'draw', cells}
-function place(col) {
-  const p = turn(), r = S.heights[col], cell = col * 6 + r;
-  S.board[cell] = p; S.heights[col]++; S.hist.push(col); S.animCell = cell;
-  const line = findLine(cell, p);
-  if (line) return { state: 'win', cells: line };
-  if (S.hist.length === 42) return { state: 'draw', cells: [] };
-  return { state: 'ok', cells: [] };
-}
-function findLine(cell, p) {
-  const c0 = (cell / 6) | 0, r0 = cell % 6;
-  for (const [dc, dr] of [[1, 0], [0, 1], [1, 1], [1, -1]]) {
-    const cells = [cell];
-    for (const s of [1, -1]) {
-      let c = c0 + s * dc, r = r0 + s * dr;
-      while (c >= 0 && c < 7 && r >= 0 && r < 6 && S.board[c * 6 + r] === p) { cells.push(c * 6 + r); c += s * dc; r += s * dr; }
-    }
-    if (cells.length >= 4) return cells;
-  }
-  return null;
-}
-function replay(hist) {
-  S.board = new Int8Array(42); S.heights = new Int8Array(7); S.hist = [];
-  for (const c of hist) { const p = 1 + (S.hist.length & 1); S.board[c * 6 + S.heights[c]] = p; S.heights[c]++; S.hist.push(c); }
-}
-
-// ================= RENDER =================
-function render() {
-  const live = S.active && !S.over && !S.busy && turn() === S.myP;
-  let h = '';
-  for (let c = 0; c < 7; c++) {
-    const can = live && S.heights[c] < 6;
-    h += `<div class="col${can ? ' can' : ''}" data-c="${c}" aria-label="Drop in column ${c + 1}">`;
-    for (let r = 5; r >= 0; r--) {
-      const cell = c * 6 + r, v = S.board[cell];
-      let cls = 'cell', inner = '';
-      if (S.winCells.includes(cell)) cls += ' win';
-      if (v) inner = `<div class="disc p${v}${cell === S.animCell ? ' drop' : ''}" style="--d:${6 - r}"></div>`;
-      else if (r === S.heights[c]) { inner = `<div class="ghost p${S.myP}"></div>`; if (S.hintCol === c) cls += ' hint'; }
-      h += `<div class="${cls}">${inner}</div>`;
-    }
-    h += '</div>';
-  }
-  $('board').innerHTML = h; S.animCell = -1;
-}
-function layoutGame() {
-  const online = S.mode === 'online';
-  document.querySelectorAll('.aionly').forEach(e => e.classList.toggle('hidden', online));
-  $('poolChip').classList.toggle('hidden', !online);
-  $('dotYou').className = 'dotc p' + S.myP; $('dotOpp').className = 'dotc p' + (3 - S.myP);
-  $('nmYou').textContent = 'You'; $('nmOpp').textContent = online ? 'Friend' : 'AI · ' + S.level.name;
-  $('sDepth').textContent = $('sNodes').textContent = $('sTime').textContent = $('sRate').textContent = '-';
-}
-function updateStatus() {
-  const mine = turn() === S.myP;
-  $('plYou').classList.toggle('active', !S.over && mine); $('plOpp').classList.toggle('active', !S.over && !mine);
-  if (S.over) return;
-  const you = S.myP === 1 ? '🔴' : '🟡';
-  $('status').textContent = mine ? `Your turn ${you}` : (S.mode === 'ai' ? 'AI is thinking…' : "Friend's turn…");
-}
-function updateControls() {
-  const myTurn = S.active && !S.over && !S.busy && turn() === S.myP;
-  $('btnUndo').textContent = `↩ Undo (${S.undos})`; $('btnHint').textContent = `💡 Hint (${S.hints})`;
-  $('btnUndo').disabled = !(S.mode === 'ai' && myTurn && S.hist.length >= 2 && S.undos > 0);
-  $('btnHint').disabled = !(S.mode === 'ai' && myTurn && S.hints > 0 && !S.hintBusy);
-}
-
-// ================= SCREENS =================
-const SCREENS = ['scrMenu', 'scrLevels', 'scrFriends', 'scrGame'];
-let current = 'scrMenu';
-function show(id) {
-  current = id;
-  SCREENS.forEach(s => $(s).classList.toggle('hidden', s !== id));
-  $('btnBack').classList.toggle('hidden', id === 'scrMenu');
-  window.scrollTo(0, 0);
-  if (id === 'scrMenu') { grantBonusIfNeeded(); renderMenu(); }
-  if (id === 'scrLevels') renderLevels();
-  if (id === 'scrFriends') setFriendUI('choose');
-}
-function renderMenu() {
-  const total = LEVELS.reduce((a, L) => a + (save.wins[L.id] || 0), 0);
-  const unlocked = LEVELS.filter((_, i) => isUnlocked(i)).length;
-  $('menuInfo').innerHTML = `🏆 Wins vs computer: <b>${total}</b> · Levels unlocked: <b>${unlocked}/5</b><br>🪙 Win a match = <b>+100 coins</b>. Friend matches cost 50 coins each.`;
-}
-function goBack() {
-  if (current === 'scrGame') {
-    if (S.mode === 'online') {
-      if (S.active && !S.over && !confirm('Leave this match? You will forfeit your 50 coin stake.')) return;
-      leaveOnline(); show('scrMenu');
-    } else { S.aiToken++; S.busy = false; S.active = false; closeModal(); show('scrLevels'); }
-  } else if (current === 'scrFriends') { leaveOnline(); show('scrMenu'); }
-  else show('scrMenu');
-}
-
-// ================= LEVELS =================
-function isUnlocked(i) { return i === 0 || (save.wins[LEVELS[i - 1].id] || 0) >= UNLOCK_NEED[i]; }
-function renderLevels() {
-  document.querySelectorAll('#firstSeg button').forEach(b => b.classList.toggle('on', (b.dataset.f === '1') === !!save.youFirst));
-  let h = '';
-  LEVELS.forEach((L, i) => {
-    const un = isUnlocked(i), w = save.wins[L.id] || 0;
-    let right, sub, bar = '';
-    if (un) {
-      right = `Wins: ${w}`; sub = L.desc;
-      if (i < 4) { const need = UNLOCK_NEED[i + 1], nxt = LEVELS[i + 1].name; const unl = w >= need;
-        bar = `<div class="bar"><i style="width:${Math.min(100, w / need * 100)}%"></i></div><div class="ds" style="margin-top:3px">${unl ? '✅ ' + nxt + ' unlocked' : `Win ${need} to unlock ${nxt} (${w}/${need})`}</div>`; }
-    } else {
-      const prev = LEVELS[i - 1], pw = save.wins[prev.id] || 0, need = UNLOCK_NEED[i];
-      right = '🔒'; sub = `Win ${need} matches on ${prev.name} to unlock`;
-      bar = `<div class="bar"><i style="width:${Math.min(100, pw / need * 100)}%"></i></div><div class="ds" style="margin-top:3px">${pw}/${need} wins on ${prev.name}</div>`;
-    }
-    h += `<div class="lvl${un ? '' : ' locked'}" data-i="${i}"><div class="ic">${un ? L.icon : '🔒'}</div><div class="tx"><div class="nm">${L.name}</div><div class="ds">${sub}</div>${bar}</div><div class="rt">${right}</div></div>`;
-  });
-  $('levelList').innerHTML = h;
-}
-
-// ================= AI MATCH =================
-function startAI(i) {
-  S.mode = 'ai'; S.level = LEVELS[i]; S.myP = save.youFirst ? 1 : 2; newAIMatch(); show('scrGame');
-}
-function newAIMatch() {
-  resetBoard(); S.hints = MAX_HINTS; S.undos = MAX_UNDOS; S.active = true; closeModal();
-  layoutGame(); render(); updateStatus(); updateControls();
-  if (turn() !== S.myP) aiTurn();
-}
-async function aiTurn() {
-  S.busy = true; const token = ++S.aiToken; updateStatus(); updateControls(); render();
-  const L = S.level, t0 = performance.now();
-  let res;
-  if (Math.random() < L.rand) {
-    const legal = [0, 1, 2, 3, 4, 5, 6].filter(c => S.heights[c] < 6);
-    res = { col: legal[(Math.random() * legal.length) | 0] };
-  } else {
-    res = await ai.think({ board: Array.from(S.board), heights: Array.from(S.heights), moves: S.hist.length, me: turn(), depth: L.depth, ms: L.ms });
-  }
-  await sleep(Math.max(0, 450 - (performance.now() - t0)));
-  if (token !== S.aiToken || S.over) return;
-  S.busy = false;
-  if (res.nodes) {
-    $('sDepth').textContent = res.depth; $('sNodes').textContent = res.nodes.toLocaleString();
-    $('sTime').textContent = res.ms < 1000 ? res.ms.toFixed(0) + ' ms' : (res.ms / 1000).toFixed(1) + ' s';
-    $('sRate').textContent = res.ms > 0 ? Math.round(res.nodes / res.ms * 1000).toLocaleString() : '-';
-  }
-  doMove(res.col, false);
-}
-async function doHint() {
-  if ($('btnHint').disabled) return;
-  S.hints--; S.hintBusy = true; updateControls();
-  const token = S.aiToken;
-  const r = await ai.think({ board: Array.from(S.board), heights: Array.from(S.heights), moves: S.hist.length, me: S.myP, depth: 8, ms: 900 });
-  S.hintBusy = false;
-  if (token !== S.aiToken || S.over) return;
-  S.hintCol = r.col; render(); updateControls(); $('status').textContent = '💡 Try the dashed circle'; sfx.click();
-}
-function doUndo() {
-  if ($('btnUndo').disabled) return;
-  S.undos--; S.aiToken++;
-  replay(S.hist.slice(0, -2)); S.hintCol = -1; S.winCells = [];
-  render(); updateStatus(); updateControls(); sfx.click();
-}
-
-// ================= MOVES (shared by both modes) =================
-function onColumn(col) {
-  if (!S.active || S.over || S.busy || turn() !== S.myP) return;
-  if (S.heights[col] >= 6) { sfx.err(); return; }
-  doMove(col, true);
-}
-function doMove(col, local) {
-  const p = turn();
-  const res = place(col); S.hintCol = -1; sfx.drop(); render();
-  if (S.mode === 'online' && local) net.send({ t: 'move', col });
-  if (res.state !== 'ok') return endMatch(res.state, p, res.cells);
-  updateStatus(); updateControls();
-  if (S.mode === 'ai' && turn() !== S.myP) aiTurn();
-}
-
-// ================= RESULTS & COINS =================
-function settle(kind) {
-  const info = { gain: 0, lines: [], extra: '' };
-  if (S.mode === 'ai') {
-    if (kind === 'win') {
-      addCoins(WIN_COINS); info.gain = WIN_COINS;
-      const idx = LEVELS.indexOf(S.level); save.wins[S.level.id] = (save.wins[S.level.id] || 0) + 1; persist();
-      const next = LEVELS[idx + 1];
-      if (next) {
-        const w = save.wins[S.level.id], need = UNLOCK_NEED[idx + 1];
-        if (w === need) info.extra = `🔓 ${next.name} unlocked!`;
-        else if (w < need) info.extra = `${need - w} more win${need - w > 1 ? 's' : ''} on ${S.level.name} to unlock ${next.name}`;
-      }
-    }
-  } else {
-    if (kind === 'win' || kind === 'forfeit') { addCoins(WIN_COINS + POOL); info.gain = WIN_COINS + POOL; info.lines.push('100 for winning + 100 prize pool'); }
-    else if (kind === 'draw') { addCoins(STAKE); info.lines.push('Your 50 coin stake was refunded'); }
-    else { info.gain = -STAKE; info.lines.push('You lost your 50 coin stake'); }
-  }
-  return info;
-}
-function endMatch(state, winner, cells) {
-  S.over = true; S.active = state === 'forfeit' ? false : S.active; S.winCells = cells || []; S.hintCol = -1; S.busy = false; S.aiToken++;
-  render(); updateStatus(); updateControls();
-  const kind = state === 'draw' ? 'draw' : state === 'forfeit' ? 'forfeit' : (winner === S.myP ? 'win' : 'lose');
-  const info = settle(kind);
-  if (kind === 'win' || kind === 'forfeit') { sfx.win(); confetti(); } else if (kind === 'lose') sfx.lose();
-  $('status').textContent = { win: 'You win! 🎉', lose: S.mode === 'ai' ? 'AI wins' : 'Friend wins', draw: "It's a draw", forfeit: 'Friend left - you win!' }[kind];
-  setTimeout(() => showResult(kind, info), kind === 'draw' ? 500 : 1000);
-}
-function showResult(kind, info) {
-  const T = { win: ['🎉', 'You win!'], lose: ['😅', S.mode === 'ai' ? 'AI wins' : 'Friend wins'], draw: ['🤝', "It's a draw"], forfeit: ['🏳️', 'Friend left']};
-  $('mEmoji').textContent = T[kind][0]; $('mTitle').textContent = T[kind][1];
-  const g = $('mGain'); g.textContent = info.gain ? (info.gain > 0 ? '+' : '') + info.gain + ' 🪙' : ''; g.className = 'gain' + (info.gain < 0 ? ' neg' : '');
-  $('mBody').textContent = info.lines.join(' · ') || (kind === 'lose' && S.mode === 'ai' ? 'Try again. You can use hints and undo.' : '');
-  $('mExtra').textContent = info.extra || '';
-  const B = $('mBtns'); B.innerHTML = '';
-  const mk = (txt, cls, fn, id) => { const b = document.createElement('button'); b.className = 'btn ' + cls; b.textContent = txt; b.onclick = fn; if (id) b.id = id; B.appendChild(b); return b; };
-  if (S.mode === 'ai') {
-    mk('Play again', 'gold', () => { sfx.click(); newAIMatch(); });
-    mk('Levels', 'alt', () => { closeModal(); show('scrLevels'); });
-  } else {
-    const rb = mk('Rematch', 'gold', requestRematch, 'btnRematch'); if (!net.conn) rb.disabled = true;
-    mk('Leave', 'alt', () => { closeModal(); leaveOnline(); show('scrMenu'); });
-  }
-  $('modal').classList.remove('hidden');
-  setTimeout(grantBonusIfNeeded, 600);
-}
-function closeModal() { $('modal').classList.add('hidden'); }
-
-// ================= ONLINE (PeerJS / WebRTC) =================
-const net = { peer: null, conn: null, host: false, started: false, mine: false, theirs: false, timer: null,
-  send(o) { try { if (this.conn && this.conn.open) this.conn.send(o); } catch (e) {} } };
-function loadPeerLib() {
-  return new Promise((res, rej) => {
-    if (window.Peer) return res();
-    const s = document.createElement('script'); s.src = PEER_SRC; s.onload = () => res(); s.onerror = () => rej(new Error('load')); document.head.appendChild(s);
-  });
-}
-function leaveOnline() {
-  clearTimeout(net.timer);
-  try { net.send({ t: 'leave' }); } catch (e) {}
-  const conn = net.conn, peer = net.peer; net.conn = null; net.peer = null; net.started = false; net.mine = net.theirs = false;
-  setTimeout(() => { try { conn && conn.close(); } catch (e) {} try { peer && peer.destroy(); } catch (e) {} }, 150);
-  if (S.mode === 'online') { S.active = false; S.mode = null; }
-  closeModal();
-}
-function randCode() { const A = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; let s = ''; for (let i = 0; i < 5; i++) s += A[(Math.random() * A.length) | 0]; return s; }
-function setFriendUI(state) {
-  $('fChoose').classList.toggle('hidden', state !== 'choose');
-  $('fHost').classList.toggle('hidden', state !== 'host');
-  $('fJoin').classList.toggle('hidden', state !== 'join');
-  if (state === 'choose') $('fErr').textContent = '';
-}
-function friendError(msg) { leaveOnline(); setFriendUI('choose'); $('fErr').textContent = msg; sfx.err(); }
-function describeErr(err) {
-  const t = err && err.type;
-  if (t === 'network' || t === 'server-error' || t === 'socket-error' || t === 'socket-closed') return 'Could not reach the matchmaking server. Check your internet.';
-  if (t === 'peer-unavailable') return 'Room not found. Check the ID and try again.';
-  return 'Connection problem. Please try again.';
-}
-async function createRoom() {
-  grantBonusIfNeeded(); sfx.click();
-  $('fErr').textContent = '';
-  try { await loadPeerLib(); } catch (e) { return friendError('Online play needs an internet connection.'); }
-  leaveOnline(); net.host = true;
-  $('roomCode').textContent = '·····'; $('hostMsg').textContent = 'Creating room…'; setFriendUI('host');
-  let tries = 0;
-  const attempt = () => {
-    const code = randCode(), peer = new Peer(ROOM_PREFIX + code); net.peer = peer;
-    peer.on('open', () => { $('roomCode').textContent = code; $('hostMsg').textContent = 'Waiting for your friend to join…'; });
-    peer.on('connection', conn => {
-      if (net.conn) { conn.on('open', () => { try { conn.send({ t: 'full' }); } catch (e) {} setTimeout(() => conn.close(), 300); }); return; }
-      net.conn = conn; wireConn(conn);
-    });
-    peer.on('error', err => {
-      if (err && err.type === 'unavailable-id' && tries++ < 5) { try { peer.destroy(); } catch (e) {} attempt(); }
-      else friendError(describeErr(err));
-    });
-  };
-  attempt();
-}
-async function joinRoom() {
-  const code = $('joinInput').value.toUpperCase().replace(/[^A-Z0-9]/g, '');
-  if (code.length !== 5) { toast('Enter the 5-character room ID'); sfx.err(); return; }
-  grantBonusIfNeeded(); sfx.click();
-  $('joinMsg').innerHTML = '<span class="spin"></span>Connecting…';
-  try { await loadPeerLib(); } catch (e) { return friendError('Online play needs an internet connection.'); }
-  leaveOnline(); net.host = false;
-  const peer = new Peer(); net.peer = peer;
-  net.timer = setTimeout(() => friendError("Couldn't connect. Check the ID and your internet."), 15000);
-  peer.on('open', () => { const conn = peer.connect(ROOM_PREFIX + code, { reliable: true, serialization: 'json' }); net.conn = conn; wireConn(conn); });
-  peer.on('error', err => friendError(describeErr(err)));
-}
-function wireConn(conn) {
-  conn.on('open', () => { if (!net.host) conn.send({ t: 'hello' }); });
-  conn.on('data', onNetData);
-  conn.on('close', () => onPeerGone(conn));
-  conn.on('error', () => onPeerGone(conn));
-}
-function onPeerGone(conn) {
-  if (conn !== net.conn) return;
-  net.conn = null;
-  if (S.mode === 'online' && S.active && !S.over) endMatch('forfeit', S.myP, []);       // opponent left mid-game: you win
-  else if (S.mode === 'online') { toast('Your friend left the room'); const rb = $('btnRematch'); if (rb) rb.disabled = true; }
-  else if (current === 'scrFriends') friendError(net.started ? 'Friend disconnected.' : 'Could not connect to the room.');
-}
-function onNetData(d) {
-  if (!d || typeof d !== 'object') return;
-  switch (d.t) {
-    case 'hello':                                   // host: a friend joined
-      if (net.host && !net.started) { net.started = true; net.send({ t: 'start', you: 2 }); startOnline(1); }
-      break;
-    case 'start':                                   // guest: host started the match
-      if (!net.host && (d.you === 1 || d.you === 2) && (!S.active || S.over)) { net.started = true; startOnline(d.you); }
-      break;
-    case 'move': {
-      const col = d.col;
-      if (S.mode !== 'online' || !S.active || S.over) return;
-      if (!Number.isInteger(col) || col < 0 || col > 6 || S.heights[col] >= 6) return;
-      if (turn() === S.myP) return;                 // not the opponent's turn: ignore
-      doMove(col, false);
-      break;
-    }
-    case 'rematch': net.theirs = true; checkRematch(); break;
-    case 'leave': if (net.conn) onPeerGone(net.conn); break;
-    case 'full': friendError('That room is already full.'); break;
-  }
-}
-function startOnline(myP) {
-  clearTimeout(net.timer);
-  grantBonusIfNeeded();
-  addCoins(-STAKE);                                 // stake is taken now and saved immediately
-  S.mode = 'online'; S.level = null; S.myP = myP; resetBoard(); S.active = true; net.mine = net.theirs = false;
-  closeModal(); layoutGame(); show('scrGame'); render(); updateStatus(); updateControls();
-  toast(`Match started · you are ${myP === 1 ? '🔴 Red (first)' : '🟡 Yellow'} · stake 50 🪙`);
-}
-function requestRematch() {
-  const b = $('btnRematch'); if (b) { b.disabled = true; b.textContent = 'Waiting for friend…'; }
-  net.mine = true; net.send({ t: 'rematch' }); checkRematch();
-}
-function checkRematch() {
-  if (net.host && net.mine && net.theirs && net.conn) {
-    const hostWas = S.myP; net.mine = net.theirs = false;
-    net.send({ t: 'start', you: hostWas }); startOnline(3 - hostWas);     // swap who goes first
-  }
-}
-
-// ================= EVENTS =================
-$('goAI').onclick = () => { sfx.click(); show('scrLevels'); };
-$('goFriends').onclick = () => { sfx.click(); show('scrFriends'); };
-$('btnBack').onclick = () => { sfx.click(); goBack(); };
-$('btnMusic').onclick = () => { save.music = !save.music; persist(); syncAudioButtons(); };
-$('btnSfx').onclick = () => { save.sfx = !save.sfx; persist(); syncAudioButtons(); if (save.sfx) sfx.click(); };
-$('firstSeg').onclick = e => { const b = e.target.closest('button'); if (!b) return; save.youFirst = b.dataset.f === '1'; persist(); sfx.click(); renderLevels(); };
-$('levelList').onclick = e => {
-  const el = e.target.closest('.lvl'); if (!el) return;
-  const i = +el.dataset.i;
-  if (!isUnlocked(i)) { el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake'); sfx.err();
-    toast(`🔒 Win ${UNLOCK_NEED[i]} matches on ${LEVELS[i - 1].name} to unlock ${LEVELS[i].name}`); return; }
-  sfx.click(); startAI(i);
-};
-$('board').onclick = e => { const c = e.target.closest('.col'); if (c) onColumn(+c.dataset.c); };
-$('btnUndo').onclick = doUndo; $('btnHint').onclick = doHint;
-$('btnNew').onclick = () => { sfx.click(); newAIMatch(); };
-$('btnCreate').onclick = createRoom;
-$('btnJoinGo').onclick = () => { sfx.click(); $('joinMsg').textContent = ''; $('joinInput').value = ''; setFriendUI('join'); $('joinInput').focus(); };
-$('btnJoin').onclick = joinRoom;
-$('joinInput').addEventListener('keydown', e => { if (e.key === 'Enter') joinRoom(); });
-$('btnJoinCancel').onclick = () => { leaveOnline(); setFriendUI('choose'); };
-$('btnHostCancel').onclick = () => { leaveOnline(); setFriendUI('choose'); };
-$('btnCopy').onclick = async () => {
-  const code = $('roomCode').textContent;
-  try { await navigator.clipboard.writeText(code); toast('Room ID copied'); } catch (e) { prompt('Copy this room ID:', code); }
-};
-$('btnShare').onclick = async () => {
-  const code = $('roomCode').textContent, text = `Join my Connect 4 room! Open ${location.href.split('#')[0]} → Play with Friends → Join through ID → ${code}`;
-  try { if (navigator.share) await navigator.share({ text }); else { await navigator.clipboard.writeText(text); toast('Invite copied'); } } catch (e) {}
-};
-document.addEventListener('pointerdown', () => { ac(); if (bgm && save.music) bgm.play().catch(() => {}); }, { once: true });
-window.addEventListener('pagehide', () => { try { net.send({ t: 'leave' }); } catch (e) {} });
-
-// ================= START =================
-initMusic(); syncAudioButtons(); renderCoins(false); show('scrMenu');
-</script>
-</body>
-</html>
+      <div class="note" style="text-a
